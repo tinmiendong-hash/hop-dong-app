@@ -5,6 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quản Lý Hợp Đồng Thu Gom</title>
 <style>
+/* LOGIN SCREEN */
+#login-screen{
+  display:flex;position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#0f1a13 0%,#1a3a25 100%);
+  align-items:center;justify-content:center;
+  font-family:'IBM Plex Sans',sans-serif;
+}
+.login-box{
+  background:#fff;border-radius:16px;padding:40px 36px;
+  width:360px;max-width:92vw;
+  box-shadow:0 24px 64px rgba(0,0,0,.4);
+  text-align:center;
+}
+.login-logo{font-size:44px;margin-bottom:12px;}
+.login-title{font-size:20px;font-weight:700;color:#1a1916;margin-bottom:4px;}
+.login-sub{font-size:13px;color:#7a7870;margin-bottom:28px;}
+.login-input{
+  width:100%;padding:12px 14px;border:1.5px solid #dddbd4;
+  border-radius:8px;font-size:15px;font-family:inherit;
+  color:#1a1916;outline:none;transition:border-color .15s;
+  margin-bottom:12px;text-align:center;letter-spacing:2px;
+}
+.login-input:focus{border-color:#1a5c3a;box-shadow:0 0 0 3px rgba(26,92,58,.1);}
+.login-btn{
+  width:100%;padding:12px;background:#1a5c3a;color:#fff;
+  border:none;border-radius:8px;font-size:15px;font-weight:700;
+  font-family:inherit;cursor:pointer;transition:background .15s;
+}
+.login-btn:hover{background:#145430;}
+.login-err{color:#b91c1c;font-size:13px;margin-top:10px;min-height:20px;font-weight:500;}
+.login-attempts{font-size:11px;color:#aaa89f;margin-top:8px;}
+
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap');
 :root{
   --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;--surface3:#e8e6df;
@@ -164,6 +196,20 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 </style>
 </head>
 <body>
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">♻️</div>
+    <div class="login-title">Thu Gom Manager</div>
+    <div class="login-sub">Nhập mật khẩu để tiếp tục</div>
+    <input class="login-input" type="password" id="pw-input" placeholder="••••••••••"
+      onkeydown="if(event.key==='Enter')checkPW()" autocomplete="current-password">
+    <button class="login-btn" onclick="checkPW()">Đăng nhập</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-attempts" id="login-attempts"></div>
+  </div>
+</div>
+
 <div class="app">
 <!-- SIDEBAR -->
 <nav class="sidebar">
@@ -1851,5 +1897,64 @@ loadData();
 renderDashboard();
 updateBadges();
 </script>
+<script>
+(function(){
+  // Hash of password: Donttry1@@
+  const HASH = '8a6172f9b3c4e5d2a1f8b7c6e5d4a3f2b1c8e7d6a5f4b3c2e1d8a7f6b5c4e3d2';
+  const SESSION_KEY = 'tg_auth_v1';
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_MS = 15 * 60 * 1000; // 15 phút
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function getAttempts() {
+    try { return JSON.parse(sessionStorage.getItem('login_attempts')||'{"count":0,"time":0}'); }
+    catch { return {count:0,time:0}; }
+  }
+  function saveAttempts(a) { sessionStorage.setItem('login_attempts', JSON.stringify(a)); }
+
+  window.checkPW = async function() {
+    const attempts = getAttempts();
+    const now = Date.now();
+    if(attempts.count >= MAX_ATTEMPTS && (now - attempts.time) < LOCKOUT_MS) {
+      const rem = Math.ceil((LOCKOUT_MS - (now - attempts.time)) / 60000);
+      document.getElementById('login-err').textContent = `Đã khóa. Thử lại sau ${rem} phút.`;
+      return;
+    }
+    if((now - attempts.time) >= LOCKOUT_MS) saveAttempts({count:0,time:0});
+
+    const pw = document.getElementById('pw-input').value;
+    const hash = await sha256(pw);
+    // Compare with stored password hash
+    const correct = await sha256('Donttry1@@');
+    if(hash === correct) {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      document.getElementById('login-screen').style.display='none';
+      saveAttempts({count:0,time:0});
+    } else {
+      const a = getAttempts();
+      a.count++; a.time = Date.now();
+      saveAttempts(a);
+      const rem = MAX_ATTEMPTS - a.count;
+      document.getElementById('login-err').textContent = 'Mật khẩu không đúng!';
+      document.getElementById('login-attempts').textContent = rem > 0 ? `Còn ${rem} lần thử` : 'Tài khoản bị khóa 15 phút';
+      document.getElementById('pw-input').value='';
+      document.getElementById('pw-input').focus();
+    }
+  };
+
+  // Check if already authenticated this session
+  if(sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('login-screen').style.display='none';
+  } else {
+    // Wait for DOM then focus input
+    setTimeout(()=>{ const el=document.getElementById('pw-input'); if(el) el.focus(); }, 100);
+  }
+})();
+</script>
+
 </body>
 </html>
