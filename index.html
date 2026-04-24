@@ -873,6 +873,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
   <div class="mb">
     <div class="g2" style="margin-bottom:14px">
       <div class="fg"><label>Khách hàng <span class="req">*</span></label><select id="nl-khach" onchange="onNLKhachChange()"><option value="">-- Chọn khách --</option></select></div>
+      <input type="hidden" id="nl-chuky" value="">
       <div class="fg"><label>Tháng / Năm <span class="req">*</span></label><input id="nl-thang" type="month" onchange="onNLKhachChange()"></div>
     </div>
     <div id="nl-info"></div>
@@ -1104,6 +1105,61 @@ function persist(){
 
 // ===================== UTILS =====================
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+// Lấy ngày chốt của chu kỳ thứ N
+function getBKChotDate(hd, chuKy){
+  if(!hd?.ngaybd || !chuKy) return null;
+  const d = new Date(hd.ngaybd);
+  d.setMonth(d.getMonth()+chuKy);
+  d.setDate(d.getDate()-1);
+  return d.toISOString().split('T')[0];
+}
+
+// Tính danh sách ngày chốt bảng kê theo chu kỳ từ ngày ký HĐ
+// VD: ký 17/4 → tháng 1: 16/5, tháng 2: 16/6, tháng 3: 16/7...
+function getChuKyChot(hd){
+  if(!hd.ngaybd) return [];
+  const ngayKy = new Date(hd.ngaybd);
+  const ngaykt = hd.ngaykt ? new Date(hd.ngaykt) : null;
+  const now = new Date(todayStr());
+  const result = [];
+  let i = 1;
+  while(i <= 60){ // max 60 tháng
+    // Ngày chốt tháng i = ngày ký + i tháng - 1 ngày
+    const chotDate = new Date(ngayKy);
+    chotDate.setMonth(chotDate.getMonth() + i);
+    chotDate.setDate(chotDate.getDate() - 1);
+    if(ngaykt && chotDate > ngaykt) break;
+    result.push({
+      soChuKy: i,
+      ngayChot: chotDate.toISOString().split('T')[0],
+      label: `Tháng ${i} (${chotDate.toLocaleDateString('vi-VN')})`,
+      isPast: chotDate < now,
+      isThisMonth: chotDate.toISOString().slice(0,7) === thisMonth()
+    });
+    i++;
+    if(i > 24) break; // giới hạn hiển thị 24 tháng
+  }
+  return result;
+}
+
+// Tìm chu kỳ hiện tại (tháng gần nhất chưa có BK)
+function getCurrentChuKy(hd){
+  const chuKys = getChuKyChot(hd);
+  const now = todayStr();
+  for(const ck of chuKys){
+    // Check if BK exists for this chu ky
+    const bk = BK.find(b=>b.hdId===hd.id && b.chuKy===ck.soChuKy);
+    if(!bk && ck.ngayChot >= now) return ck; // next upcoming
+    if(!bk && !ck.isPast) return ck;
+  }
+  // Return first unpaid chu ky
+  for(const ck of chuKys){
+    const bk = BK.find(b=>b.hdId===hd.id && b.chuKy===ck.soChuKy);
+    if(!bk) return ck;
+  }
+  return null;
+}
 const todayStr=()=>new Date().toISOString().split('T')[0];
 const thisMonth=()=>new Date().toISOString().slice(0,7);
 function fmtDate(d){if(!d)return'—';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
@@ -1461,18 +1517,25 @@ function saveHD(){
   };
   if(editHDId){const i=HD.findIndex(x=>x.id===editHDId);HD[i]=obj;}
   else HD.push(obj);
-  // Recalculate ngayHanTT for all related BK when hanTT changes
-  if(obj.hanTT){
+  // Recalculate ngayHanTT for all related BK using chu ky logic
+  if(obj.hanTT || obj.ngaybd){
     BK.forEach((b,i)=>{
       if(b.hdId!==obj.id) return;
-      if(b.ttTT==='da') return; // already paid, skip
-      // Recalc: ngayHanTT = ngayChot of that BK month + hanTT days
-      // Use BK createdAt or thang's last day as base
-      const [y,m] = (b.thang||thisMonth()).split('-').map(Number);
-      const ngayChot = obj.ngayChot || 25;
-      const chotDateStr = `${y}-${String(m).padStart(2,'0')}-${String(ngayChot).padStart(2,'0')}`;
+      if(b.ttTT==='da') return;
+      // Use chu ky if available, else fallback to thang
+      let chotDateStr;
+      if(b.chuKy && obj.ngaybd){
+        const d = new Date(obj.ngaybd);
+        d.setMonth(d.getMonth()+b.chuKy);
+        d.setDate(d.getDate()-1);
+        chotDateStr = d.toISOString().split('T')[0];
+      } else {
+        const [y,m] = (b.thang||thisMonth()).split('-').map(Number);
+        const nc = obj.ngayChot||25;
+        chotDateStr = `${y}-${String(m).padStart(2,'0')}-${String(nc).padStart(2,'0')}`;
+      }
       const chotDate = new Date(chotDateStr);
-      chotDate.setDate(chotDate.getDate() + (obj.hanTT||0));
+      chotDate.setDate(chotDate.getDate()+(obj.hanTT||0));
       BK[i].ngayHanTT = chotDate.toISOString().split('T')[0];
     });
   }
@@ -1679,6 +1742,7 @@ function renderBangKe(){
   body.innerHTML=eligible.map(h=>{
     const bk=BK.find(b=>b.hdId===h.id&&b.thang===thang);
     const isKL=h.dgLoai!=='so_lan';
+    const chuKyLabel = bk?.chuKy ? ` · <span class='badge b-b'>Tháng ${bk.chuKy} HĐ · Chốt: ${fmtDate(getBKChotDate(h,bk.chuKy))}</span>` : '';
     const loaiInfo=h.loai==='Khoán tháng'?`Khoán tháng · ${fmtMoney(h.giatri)}/tháng`:
       (isKL?`${h.dvt} × ${fmtMoney(h.dongia)}`:`${fmtMoney(h.dongialan)}/lần`);
     const bkHD = HD.find(x=>x.id===h.id);
@@ -1691,7 +1755,7 @@ function renderBangKe(){
       <div class="ch">
         <div>
           <div style="font-size:15px;font-weight:700">${h.ten} ${loaiBadge(h.loai)}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">${h.soHD||''} · ${loaiInfo} · ${h.tanSuat||''}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${h.soHD||''} · ${loaiInfo} · ${h.tanSuat||''}${chuKyLabel}</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           ${ttBadgeStr}
@@ -1775,21 +1839,44 @@ function onNLKhachChange(){
   const infoText=isKT?`Khoán tháng · Giá khoán: <strong>${fmtMoney(nlCurHD.giatri)}/tháng</strong>`
     :(isKL?`Đơn giá theo <strong>${nlCurHD.dvt}</strong> · Đơn giá: <strong>${fmtMoney(nlCurHD.dongia)}/${nlCurHD.dvt}</strong>`
     :`Đơn giá theo <strong>số lần</strong> · <strong>${fmtMoney(nlCurHD.dongialan)}/lần</strong>`);
-  // Calculate expected ngayHanTT
+  // Calculate chu ky chot dates
   let hanTTNote = '';
-  if(nlCurHD.hanTT && nlCurHD.ngayChot){
-    const thangVal = document.getElementById('nl-thang')?.value || thisMonth();
-    const [y,m] = thangVal.split('-').map(Number);
-    const nc = nlCurHD.ngayChot;
-    const chotD = new Date(`${y}-${String(m).padStart(2,'0')}-${String(nc).padStart(2,'0')}`);
-    const hanD = new Date(chotD); hanD.setDate(hanD.getDate()+(nlCurHD.hanTT||0));
-    const hanStr = hanD.toISOString().split('T')[0];
-    hanTTNote = ` · Chốt: <strong>ngày ${nc}</strong> · Hạn TT: <strong>${fmtDate(hanStr)}</strong> (sau ${nlCurHD.hanTT} ngày)`;
-    // Auto-fill ngayHanTT if empty
-    const hanEl = document.getElementById('nl-ngayHanTT');
-    if(hanEl && !hanEl.value) hanEl.value = hanStr;
+  let chuKyHTML = '';
+  const chuKys = getChuKyChot(nlCurHD);
+  if(chuKys.length > 0){
+    const now = todayStr();
+    // Find upcoming/current chu ky
+    const nextCK = chuKys.find(ck=>{
+      const bk = BK.find(b=>b.hdId===nlCurHD.id && b.chuKy===ck.soChuKy);
+      return !bk;
+    });
+    if(nextCK){
+      // Auto-fill ngayHanTT based on this chu ky's chotDate + hanTT
+      const hanD = new Date(nextCK.ngayChot);
+      if(nlCurHD.hanTT) hanD.setDate(hanD.getDate()+(nlCurHD.hanTT||0));
+      const hanStr = hanD.toISOString().split('T')[0];
+      hanTTNote = ` · <strong>Tháng ${nextCK.soChuKy} HĐ</strong> · Chốt: <strong>${fmtDate(nextCK.ngayChot)}</strong>${nlCurHD.hanTT?` · Hạn TT: <strong>${fmtDate(hanStr)}</strong>`:''}`;
+      const hanEl = document.getElementById('nl-ngayHanTT');
+      if(hanEl && !hanEl.value) hanEl.value = hanStr;
+      // Store chu ky in hidden field
+      const ckEl = document.getElementById('nl-chuky');
+      if(ckEl) ckEl.value = nextCK.soChuKy;
+    }
+    // Show all chu ky schedule
+    chuKyHTML = `<div style="margin-top:8px;padding:10px;background:var(--surface);border-radius:6px;font-size:12px">
+      <div style="font-weight:600;color:var(--muted);margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.05em">LỊCH CHỐT BẢNG KÊ THEO HĐ</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${chuKys.slice(0,12).map(ck=>{
+          const bk = BK.find(b=>b.hdId===nlCurHD.id && b.chuKy===ck.soChuKy);
+          const color = bk?'var(--accent)': ck.ngayChot<now?'var(--danger)':'var(--muted)';
+          const bg = bk?'var(--accent-l)': ck.ngayChot<now?'var(--danger-l)':'var(--surface2)';
+          const icon = bk?'✅': ck.ngayChot<now?'⚠️':'📅';
+          return \`<span style="padding:3px 8px;border-radius:4px;background:\${bg};color:\${color};font-size:11px" title="Ngày chốt: \${fmtDate(ck.ngayChot)}">\${icon} T\${ck.soChuKy}: \${fmtDate(ck.ngayChot)}\${bk?' (đã chốt)':''}</span>\`;
+        }).join('')}
+      </div>
+    </div>`;
   }
-  info.innerHTML=`<div class="alert ag">${infoText}${hanTTNote}</div>`;
+  info.innerHTML=`<div class="alert ag">${infoText}${hanTTNote}</div>${chuKyHTML}`;
   document.getElementById('nl-tong-kl-wrap').style.display=(!isKT&&isKL)?'block':'none';
   document.getElementById('nl-tong-sl-wrap').style.display=(!isKT&&!isKL)?'block':'none';
   document.getElementById('nl-tong-lbl').textContent=`Tổng ${nlCurHD.dvt||'khối lượng'}`;
@@ -1886,7 +1973,9 @@ function saveNL(){
   const tongTien=tongTienChuaVAT+vatAmt;
   const ex=BK.find(b=>b.hdId===hdId&&b.thang===thang);
   const obj={
-    id:ex?ex.id:uid(),hdId,thang,tongKL,tongSL,tongTienChuaVAT,vat:nlVat,vatAmt,tongTien,rows,
+    id:ex?ex.id:uid(),hdId,thang,
+    chuKy:Number(document.getElementById('nl-chuky')?.value)||null,
+    tongKL,tongSL,tongTienChuaVAT,vat:nlVat,vatAmt,tongTien,rows,
     loai:h.dgLoai||'khoi_luong',dvt:h.dvt||'',
     ttTT:document.getElementById('nl-ttTT').value,
     ngayHanTT:document.getElementById('nl-ngayHanTT').value,
