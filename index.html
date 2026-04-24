@@ -2903,8 +2903,22 @@ async function syncDown() {
     renderAll();
     showSyncStatus('✅ ' + new Date().toLocaleTimeString('vi-VN'));
   } catch(e) {
-    showSyncStatus('⚠️ Offline - dùng dữ liệu local');
-    console.error(e);
+    const msg = e?.message || String(e);
+    showSyncStatus('⚠️ Offline: ' + msg.slice(0,40));
+    console.error('Supabase sync error:', e);
+    // Try a simple ping to see what error
+    try {
+      const ping = await fetch(SB_URL + '/rest/v1/hop_dong?limit=1', {
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+      });
+      if(!ping.ok) {
+        const errText = await ping.text();
+        showSyncStatus('❌ ' + ping.status + ': ' + errText.slice(0,60));
+        console.error('Ping error:', ping.status, errText);
+      }
+    } catch(e2) {
+      showSyncStatus('❌ Không kết nối được: ' + e2.message.slice(0,40));
+    }
   }
 }
 
