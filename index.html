@@ -613,7 +613,14 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
       </div>
       <div class="fg"><label>Số điện thoại công ty</label><input id="hd-sdt" placeholder="0901..."></div>
       <div class="fg"><label>Email</label><input id="hd-email" placeholder="email@..."></div>
-      <div class="fg"><label>Địa chỉ công ty / cá nhân</label><input id="hd-diachi1" placeholder="Địa chỉ đăng ký..."></div>
+      <div class="fg">
+        <label>Địa chỉ công ty / cá nhân</label>
+        <div style="display:flex;gap:6px">
+          <input id="hd-diachi1" placeholder="Địa chỉ đăng ký..." style="flex:1">
+          <button type="button" class="btn bou bs no-print" onclick="chuyenDiaChi()" title="Chuyển địa chỉ mới sau sáp nhập">🔄 Địa chỉ mới</button>
+        </div>
+        <span class="hint">Nhấn 🔄 để tra địa chỉ mới sau sáp nhập 2025</span>
+      </div>
       <div class="fg"><label>Địa chỉ thu gom (nếu khác)</label><input id="hd-diachi2" placeholder="Để trống nếu giống trên"></div>
       <div class="fg"><label>Người phụ trách</label><input id="hd-phuTrach" placeholder="Tên nhân viên phụ trách"></div>
       <div class="fg"><label>SĐT người phụ trách</label><input id="hd-sdtPT" placeholder="0901..."></div>
@@ -2364,6 +2371,16 @@ async function _syncAllUp() {
 // On first load: get from cloud
 window.addEventListener('load', ()=>{ syncDown(); });
 
+
+// ===================== CHUYỂN ĐỊA CHỈ MỚI =====================
+function chuyenDiaChi(){
+  const dc = document.getElementById('hd-diachi1').value.trim();
+  if(!dc){ toast('Nhập địa chỉ trước rồi mới chuyển','error'); return; }
+  // Open tracuudiachi with address pre-filled in search
+  const url = `https://tracuudiachi.io.vn/?q=${encodeURIComponent(dc)}`;
+  window.open(url, '_blank');
+  toast('🔄 Đã mở trang tra cứu địa chỉ mới — copy kết quả rồi dán lại vào ô địa chỉ nhé!');
+}
 
 // ===================== TRA CỨU MST =====================
 async function traCuuMST(){
