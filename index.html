@@ -2900,9 +2900,7 @@ async function syncDown() {
     localStorage.setItem('hd_v3', JSON.stringify(HD));
     localStorage.setItem('bk_v3', JSON.stringify(BK));
     localStorage.setItem('baogia_v3', JSON.stringify(BAOGIA));
-    // Safe call - renderAll may not be defined yet on first load
-    if(typeof renderAll === 'function') renderAll();
-    else renderDashboard();
+    renderAll();
     showSyncStatus('✅ ' + new Date().toLocaleTimeString('vi-VN'));
   } catch(e) {
     const msg = e?.message || String(e);
@@ -2964,11 +2962,9 @@ async function _syncAllUp() {
   }
 }
 
-// On first load: get from cloud
-// Safe init - wait for all functions to be defined
-window.addEventListener('load', ()=>{
-  setTimeout(()=>{ syncDown(); }, 100);
-});
+// On first load: sync from cloud AFTER everything is initialized
+// appReady is set at the very bottom of the last script block
+window._syncOnReady = true;
 
 
 // ===================== TRA CỨU MST =====================
@@ -3022,6 +3018,11 @@ async function traCuuMST(){
   }
 }
 
+
+// ===================== DEFERRED SYNC (runs after all JS loaded) =====================
+if(window._syncOnReady){
+  syncDown();
+}
 </script>
 
 </body>
