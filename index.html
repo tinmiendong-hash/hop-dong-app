@@ -445,7 +445,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 <div id="page-hdList" class="page">
   <div class="ph">
     <div class="pt">Danh sách Hợp đồng <small>Tất cả loại hợp đồng đang hoạt động</small></div>
-    <button class="btn bp no-print" onclick="openModalHD()">+ Thêm hợp đồng</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn bou bs no-print" onclick="syncDown()">↺ Làm mới</button>
+      <button class="btn bp no-print" onclick="openModalHD()">+ Thêm hợp đồng</button>
+    </div>
   </div>
   <div class="chips" id="chips-loai">
     <div class="chip active" onclick="filterHD('all',this)">Tất cả</div>
@@ -473,6 +476,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 <div id="page-lichsu" class="page">
   <div class="ph">
     <div class="pt">Lịch sử Hợp đồng <small>HĐ đã hủy, hết hạn, thanh lý</small></div>
+    <button class="btn bou bs no-print" onclick="syncDown()">↺ Làm mới</button>
   </div>
   <div class="tw"><table>
     <thead><tr>
@@ -489,7 +493,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 <div id="page-bangke" class="page">
   <div class="ph">
     <div class="pt">Bảng kê <small>Chốt & in bảng kê theo tháng</small></div>
-    <div style="display:flex;gap:10px;align-items:center">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn bou bs no-print" onclick="syncDown()">↺ Làm mới</button>
       <select id="bk-month" onchange="renderBangKe()" style="padding:8px 11px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:13px;cursor:pointer;background:var(--surface);"></select>
       <button class="btn bou bs no-print" onclick="openModalNL()">+ Nhập liệu thu gom</button>
     </div>
@@ -499,7 +504,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 
 <!-- ========== CÔNG NỢ ========== -->
 <div id="page-congno" class="page">
-  <div class="ph"><div class="pt">Công nợ <small>Tổng hợp các khoản chưa thu đủ</small></div></div>
+  <div class="ph"><div class="pt">Công nợ <small>Tổng hợp các khoản chưa thu đủ</small></div><button class="btn bou bs no-print" onclick="syncDown()">↺ Làm mới</button></div>
   <div class="stats" id="cn-stats"></div>
   <div class="card">
     <div class="ch"><div class="ct">💳 Khoán (năm & tháng) chưa thanh toán đủ</div></div>
@@ -515,7 +520,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 <div id="page-nhac" class="page">
   <div class="ph">
     <div class="pt">Nhắc việc <small>Lịch thu gom, hóa đơn, gia hạn, bảng kê</small></div>
-    <button class="btn bou bs no-print" onclick="toggleNhacSettings()">💡 Hướng dẫn</button>
+    <div style="display:flex;gap:8px"><button class="btn bou bs no-print" onclick="syncDown()">↺ Làm mới</button><button class="btn bou bs no-print" onclick="toggleNhacSettings()">💡 Hướng dẫn</button></div>
   </div>
 
   <!-- INFO: ngày chốt theo từng hợp đồng -->
@@ -555,7 +560,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 <div id="page-baogiaList" class="page">
   <div class="ph">
     <div class="pt">Báo giá <small>Quản lý danh sách báo giá</small></div>
-    <button class="btn bp no-print" onclick="openModalBaoGia()">+ Tạo báo giá</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn bou bs no-print" onclick="syncDown()">↺ Làm mới</button>
+      <button class="btn bp no-print" onclick="openModalBaoGia()">+ Tạo báo giá</button>
+    </div>
   </div>
   <div class="tw"><table>
     <thead><tr>
