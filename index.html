@@ -544,6 +544,10 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
       <div id="nv-chuachot"></div>
     </div>
   </div>
+  <div class="card" style="border:2px solid var(--danger);margin-bottom:18px" id="nv-congno-han-card">
+    <div class="ch"><div class="ct" style="color:var(--danger)">⏰ Công nợ đến hạn & quá hạn (7 ngày)</div></div>
+    <div id="nv-congno-han"></div>
+  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
     <div class="card">
       <div class="ch"><div class="ct">📅 HĐ sắp hết hạn (60 ngày)</div></div>
@@ -760,14 +764,43 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
       <div class="alert ai">💡 <span>Bạn có thể <strong>chuyển đổi sang Khoán năm</strong> nếu khách muốn ký dài hạn hơn. <button class="btn bg bxs" style="margin-left:8px" onclick="convertToKhoanNam()">Chuyển → Khoán năm</button></span></div>
     </div>
     <hr class="div">
-    <div class="sl">Thanh toán (áp dụng cho Khoán năm/tháng)</div>
+    <div class="sl">Phương thức & điều khoản thanh toán</div>
+    <div class="g2" style="margin-bottom:12px">
+      <div class="fg">
+        <label>Phương thức thanh toán</label>
+        <select id="hd-phuongThucTT" onchange="onPhuongThucChange()">
+          <option value="ky_xuat_tt">📋 Ký HĐ → Xuất HĐ → Thanh toán</option>
+          <option value="chot_xuat_tt">🧾 Chốt bảng kê → Xuất HĐ → Thanh toán</option>
+          <option value="giao_hang_xuat_hd">🚛 Giao hàng → BBGN → Xuất HĐ ngay (Phế liệu)</option>
+          <option value="tam_ung">💳 Tạm ứng 1 phần → Hoàn tất → Xuất HĐ</option>
+        </select>
+        <span class="hint" id="pt-hint">Ký HĐ xong xuất HĐ và thanh toán ngay</span>
+      </div>
+      <div class="fg">
+        <label>Thời hạn thanh toán (ngày sau xuất HĐ)</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="hd-hanTT" min="0" max="90" placeholder="30"
+            style="width:70px;padding:8px 10px;border:1px solid var(--border2);border-radius:6px;font-size:14px;font-weight:600;text-align:center">
+          <span style="font-size:13px;color:var(--muted)">ngày</span>
+        </div>
+        <span class="hint">Nhắc khi còn 7 ngày tới hạn</span>
+      </div>
+    </div>
     <div class="g4" id="hd-tt-wrap">
       <div class="fg"><label>Trạng thái TT</label>
         <select id="hd-ttTT"><option value="chua">Chưa thanh toán</option><option value="da">Đã thanh toán</option><option value="mot_phan">Thanh toán một phần</option></select>
       </div>
       <div class="fg"><label>Số tiền đã thu (VND)</label><input id="hd-daThu" type="text" placeholder="0" oninput="fmtInput(this)" value="0"></div>
-      <div class="fg"><label>Ngày thanh toán</label><input id="hd-ngayTT" type="date"></div>
+      <div class="fg"><label>Ngày đến hạn thanh toán</label><input id="hd-ngayHanTT" type="date"></div>
       <div class="fg"><label>Ghi chú TT</label><input id="hd-ghichuTT" placeholder="Hình thức, ghi chú..."></div>
+    </div>
+    <div class="fg" id="hd-tamung-wrap" style="display:none;margin-top:8px">
+      <label>Số tiền tạm ứng (VND)</label>
+      <input id="hd-tamUng" type="text" placeholder="0" oninput="fmtInput(this)">
+      <span class="hint">Phần còn lại thanh toán sau khi hoàn tất thu gom và xuất HĐ</span>
+    </div>
+    <div id="hd-bbgn-wrap" style="display:none;margin-top:8px">
+      <div class="alert ai">🚛 <span><strong>Phế liệu — Xuất HĐ ngay khi giao hàng:</strong> Khi giao hàng, ký biên bản giao nhận (BBGN) và xuất hóa đơn trong ngày. Ngày đến hạn thanh toán tính từ ngày xuất HĐ.</span></div>
     </div>
   </div>
   <div class="mf">
@@ -869,6 +902,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
       <div class="fg"><label>Trạng thái TT</label><select id="nl-ttTT"><option value="chua">Chưa thanh toán</option><option value="da">Đã thanh toán</option><option value="mot_phan">Một phần</option></select></div>
       <div class="fg"><label>Đã thu (VND)</label><input id="nl-dathu" type="text" placeholder="0" oninput="fmtInput(this)" value="0"></div>
       <div class="fg"><label>Ngày thanh toán</label><input id="nl-ngayTT" type="date"></div>
+      <div class="fg"><label>Ngày đến hạn TT</label><input id="nl-ngayHanTT" type="date"></div>
+      <div class="fg"><label>Số biên bản giao nhận</label><input id="nl-soBBGN" placeholder="BBGN-2025-001..."></div>
       <div class="fg"><label>Ghi chú</label><input id="nl-ghichu" placeholder="Ghi chú..."></div>
     </div>
   </div>
@@ -1183,6 +1218,28 @@ function stepGiaTri(n){
   el.value=v>0?v.toLocaleString('vi-VN'):'';
   calcVAT();
 }
+function onPhuongThucChange(){
+  const v = document.getElementById('hd-phuongThucTT')?.value;
+  const hints = {
+    'ky_xuat_tt': 'Ký HĐ xong xuất HĐ và thanh toán — áp dụng khoán năm, NCC',
+    'chot_xuat_tt': 'Cuối tháng chốt bảng kê → xuất HĐ → thanh toán sau N ngày — đơn giá, khoán tháng',
+    'giao_hang_xuat_hd': 'Khi giao hàng ký biên bản giao nhận → xuất HĐ ngay trong ngày — áp dụng Phế liệu',
+    'tam_ung': 'Tạm ứng trước 1 phần, còn lại thanh toán sau khi hoàn tất thu gom & xuất HĐ'
+  };
+  const el = document.getElementById('pt-hint');
+  if(el) el.textContent = hints[v]||'';
+  const tamungWrap = document.getElementById('hd-tamung-wrap');
+  if(tamungWrap) tamungWrap.style.display = v==='tam_ung'?'block':'none';
+  const bbgnWrap = document.getElementById('hd-bbgn-wrap');
+  if(bbgnWrap) bbgnWrap.style.display = v==='giao_hang_xuat_hd'?'block':'none';
+  // Auto-set hanTT default
+  const hanEl = document.getElementById('hd-hanTT');
+  if(hanEl && !hanEl.value){
+    if(v==='chot_xuat_tt') hanEl.value=30;
+    else if(v==='ky_xuat_tt') hanEl.value=0;
+    else hanEl.value=0;
+  }
+}
 function calcVAT(){
   const giatri=parseMoney(document.getElementById('hd-giatri').value)||0;
   const vat=Number(document.getElementById('hd-vat')?.value||0);
@@ -1254,6 +1311,11 @@ function clearHDForm(){
   if(document.getElementById('hd-giatri-vat')) document.getElementById('hd-giatri-vat').value='';
   if(document.getElementById('hd-vat-hint')) document.getElementById('hd-vat-hint').textContent='';
   document.getElementById('hd-daThu').value='0';
+  document.getElementById('hd-phuongThucTT').value='ky_xuat_tt';
+  document.getElementById('hd-hanTT').value='';
+  document.getElementById('hd-ngayHanTT').value='';
+  document.getElementById('hd-tamUng').value='';
+  onPhuongThucChange();
   document.getElementById('hd-dongia').value='';
   document.getElementById('hd-dongialan').value='';
   document.getElementById('hd-hoahong').value='0';
@@ -1299,7 +1361,12 @@ function editHD(id){
   document.getElementById('hd-ghichuTG').value=h.ghichuTG||'';
   document.getElementById('hd-ngayChot').value=h.ngayChot||'';
   document.getElementById('hd-ngayHD').value=h.ngayHD||'';
+  document.getElementById('hd-phuongThucTT').value=h.phuongThucTT||'ky_xuat_tt';
+  document.getElementById('hd-hanTT').value=h.hanTT||'';
+  document.getElementById('hd-ngayHanTT').value=h.ngayHanTT||'';
+  document.getElementById('hd-tamUng').value=h.tamUng?(h.tamUng).toLocaleString('vi-VN'):'';
   document.getElementById('hd-ttTT').value=h.ttTT||'chua';
+  onPhuongThucChange();
   document.getElementById('hd-daThu').value=h.daThu?(h.daThu).toLocaleString('vi-VN'):'0';
   document.getElementById('hd-ngayTT').value=h.ngayTT||'';
   document.getElementById('hd-ghichuTT').value=h.ghichuTT||'';
@@ -1344,6 +1411,10 @@ function saveHD(){
     ghichuTG:document.getElementById('hd-ghichuTG').value.trim(),
     ngayChot:Number(document.getElementById('hd-ngayChot')?.value)||null,
     ngayHD:Number(document.getElementById('hd-ngayHD')?.value)||null,
+    phuongThucTT:document.getElementById('hd-phuongThucTT').value,
+    hanTT:Number(document.getElementById('hd-hanTT').value)||0,
+    ngayHanTT:document.getElementById('hd-ngayHanTT').value,
+    tamUng:parseMoney(document.getElementById('hd-tamUng').value)||0,
     ttTT:document.getElementById('hd-ttTT').value,
     daThu:parseMoney(document.getElementById('hd-daThu').value),
     ngayTT:document.getElementById('hd-ngayTT').value,
@@ -1462,7 +1533,9 @@ function renderHD(){
     const rem=calcRemaining(h);
     const remStr=rem!==null?`<span style="font-size:12px;color:${rem<=1?'var(--danger)':'var(--muted)'}">${rem} lần</span>`:'—';
     const giaStr=h.loai==='Đơn giá'?(h.dgLoai==='so_lan'?`${fmtMoney(h.dongialan)}/lần`:`${fmtMoney(h.dongia)}/${h.dvt}`):(h.vat?`${fmtMoney(h.giatri)}<div style="font-size:10px;color:var(--accent)">+VAT ${h.vat}%: ${fmtMoney(h.giatriCoVAT)}</div>`:fmtMoney(h.giatri));
-    const ttStr=h.loai==='Đơn giá'?`<span class="badge b-gr">—</span>`:ttBadge(h.ttTT,h.giatri,h.daThu);
+    const ttStr=h.loai==='Đơn giá'?`<span class="badge b-gr">—</span>`:
+      ttBadge(h.ttTT,h.giatri,h.daThu)+
+      (h.ngayHanTT&&h.ttTT!=='da'?`<div style="font-size:10px;color:${h.ngayHanTT<todayStr()?'var(--danger)':'var(--muted)'};margin-top:2px">Hạn TT: ${fmtDate(h.ngayHanTT)}</div>`:'');
     return`<tr>
       <td>${loaiBadge(h.loai)}</td>
       <td><strong>${h.ten}</strong>${h.soHD?`<div style="font-size:11px;color:var(--muted)">${h.soHD}</div>`:''}${h.mst?`<div style="font-size:10px;color:var(--muted2)">MST: ${h.mst}</div>`:''}</td>
@@ -1598,6 +1671,8 @@ function openNLFor(hdId,thang){
     document.getElementById('nl-ttTT').value=ex.ttTT||'chua';
     document.getElementById('nl-dathu').value=ex.daThu?(ex.daThu).toLocaleString('vi-VN'):'0';
     document.getElementById('nl-ngayTT').value=ex.ngayTT||'';
+    document.getElementById('nl-ngayHanTT').value=ex.ngayHanTT||'';
+    if(document.getElementById('nl-soBBGN')) document.getElementById('nl-soBBGN').value=ex.soBBGN||'';
     document.getElementById('nl-ghichu').value=ex.ghichu||'';
     if(document.getElementById('nl-vat')&&ex.vat) document.getElementById('nl-vat').value=String(ex.vat);
     if(ex.rows&&ex.rows.length){nlRows=[...ex.rows];setNLMode('chitiet',document.getElementById('nl-tab-ct'));}
@@ -1621,6 +1696,8 @@ function openModalNL(){
   if(document.getElementById('nl-vat')) document.getElementById('nl-vat').value='0';
   document.getElementById('nl-dathu').value='0';
   document.getElementById('nl-ngayTT').value='';
+  document.getElementById('nl-ngayHanTT').value='';
+  if(document.getElementById('nl-soBBGN')) document.getElementById('nl-soBBGN').value='';
   document.getElementById('nl-ghichu').value='';
   renderNLRows();
   setNLMode('chitiet',document.getElementById('nl-tab-ct'));
@@ -1738,11 +1815,21 @@ function saveNL(){
     id:ex?ex.id:uid(),hdId,thang,tongKL,tongSL,tongTienChuaVAT,vat:nlVat,vatAmt,tongTien,rows,
     loai:h.dgLoai||'khoi_luong',dvt:h.dvt||'',
     ttTT:document.getElementById('nl-ttTT').value,
+    ngayHanTT:document.getElementById('nl-ngayHanTT').value,
     daThu:parseMoney(document.getElementById('nl-dathu').value),
     ngayTT:document.getElementById('nl-ngayTT').value,
+    soBBGN:document.getElementById('nl-soBBGN')?.value.trim()||'',
     ghichu:document.getElementById('nl-ghichu').value.trim()
   };
   if(ex){const i=BK.findIndex(b=>b.id===ex.id);BK[i]=obj;}else BK.push(obj);
+  // Auto set ngayHanTT for BK based on contract hanTT
+  const hdForBK = HD.find(x=>x.id===hdId);
+  if(hdForBK && hdForBK.hanTT && !obj.ngayHanTT){
+    const today = new Date();
+    today.setDate(today.getDate() + (hdForBK.hanTT||0));
+    obj.ngayHanTT = today.toISOString().split('T')[0];
+    if(BK[BK.length-1] && BK[BK.length-1].id===obj.id) BK[BK.length-1].ngayHanTT = obj.ngayHanTT;
+  }
   persist();closeModal('modal-nl');renderBangKe();renderDashboard();updateBadges();toast('✅ Đã lưu bảng kê');
 }
 
@@ -1963,6 +2050,46 @@ function renderNhac(){
       </div>
     </div>`;
   }).join(''):'<div class="empty" style="padding:20px"><div class="ei" style="font-size:26px">✅</div>Không có lịch thu gom trong 30 ngày</div>';
+
+  // Công nợ sắp đến hạn (7 ngày)
+  const in7 = addDays(now, 7);
+  const congNoSapHan = [
+    // From HD (khoán)
+    ...HD.filter(h=>h.status==='active'&&h.ttTT!=='da'&&h.ngayHanTT&&h.ngayHanTT>=now&&h.ngayHanTT<=in7)
+      .map(h=>({type:'hd',id:h.id,ten:h.ten,loai:h.loai,so:(h.giatri||0)-(h.daThu||0),han:h.ngayHanTT,days:diffDays(h.ngayHanTT,now)})),
+    // From BK (đơn giá/khoán tháng)
+    ...BK.filter(b=>b.ttTT!=='da'&&b.ngayHanTT&&b.ngayHanTT>=now&&b.ngayHanTT<=in7)
+      .map(b=>{const h=HD.find(d=>d.id===b.hdId);return{type:'bk',id:b.id,ten:h?h.ten:'—',loai:h?h.loai:'',thang:b.thang,so:(b.tongTien||0)-(b.daThu||0),han:b.ngayHanTT,days:diffDays(b.ngayHanTT,now)};})
+  ].filter(x=>x.so>0).sort((a,b)=>a.days-b.days);
+
+  // Công nợ QUÁ HẠN
+  const congNoQuaHan = [
+    ...HD.filter(h=>h.status==='active'&&h.ttTT!=='da'&&h.ngayHanTT&&h.ngayHanTT<now)
+      .map(h=>({type:'hd',id:h.id,ten:h.ten,loai:h.loai,so:(h.giatri||0)-(h.daThu||0),han:h.ngayHanTT,days:diffDays(now,h.ngayHanTT)})),
+    ...BK.filter(b=>b.ttTT!=='da'&&b.ngayHanTT&&b.ngayHanTT<now)
+      .map(b=>{const h=HD.find(d=>d.id===b.hdId);return{type:'bk',id:b.id,ten:h?h.ten:'—',loai:h?h.loai:'',thang:b.thang,so:(b.tongTien||0)-(b.daThu||0),han:b.ngayHanTT,days:diffDays(now,b.ngayHanTT)};})
+  ].filter(x=>x.so>0).sort((a,b)=>b.days-a.days);
+
+  // Render công nợ section (insert before hethan)
+  const congNoCard = document.getElementById('nv-congno-han');
+  if(congNoCard){
+    const allCN = [...congNoQuaHan, ...congNoSapHan];
+    congNoCard.innerHTML = allCN.length ? allCN.map(c=>{
+      const isQuaHan = c.han < now;
+      const label = isQuaHan ? `🔴 Quá hạn ${c.days} ngày` : c.days===0?'🔴 Hôm nay':c.days<=3?`🟠 Còn ${c.days} ngày`:`🟡 Còn ${c.days} ngày`;
+      const sub = c.type==='bk'?`Bảng kê ${c.thang?c.thang.split('-').reverse().join('/'):''}`:`${c.loai}`;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <strong>${c.ten}</strong>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${sub} · Hạn: ${fmtDate(c.han)} · <span style="color:${isQuaHan?'var(--danger)':'var(--warn)'}">${label}</span></div>
+        </div>
+        <div style="text-align:right">
+          <div class="money m-r">${fmtMoney(c.so)}</div>
+          <button class="btn bxs bp no-print" style="margin-top:4px" onclick="openTT('${c.type}','${c.id}')">💰 Thu tiền</button>
+        </div>
+      </div>`;
+    }).join('') : '<div class="empty" style="padding:16px"><div class="ei" style="font-size:24px">✅</div>Không có công nợ đến hạn</div>';
+  }
 
   // Hết hạn
   const hh=HD.filter(h=>h.status==='active'&&!h.noRenew&&h.ngaykt&&h.ngaykt>=now&&h.ngaykt<=in60).sort((a,b)=>a.ngaykt>b.ngaykt?1:-1);
@@ -2318,9 +2445,13 @@ function updateBadges(){
     const d=Math.round((cd-todayD)/86400000);
     return d>=0&&d<=3;
   }).length;
+  const in7b = addDays(now,7);
+  const congNoHanCount =
+    HD.filter(h=>h.status==='active'&&h.ttTT!=='da'&&h.ngayHanTT&&(h.ngayHanTT<now||(h.ngayHanTT>=now&&h.ngayHanTT<=in7b))&&((h.giatri||0)-(h.daThu||0))>0).length +
+    BK.filter(b=>b.ttTT!=='da'&&b.ngayHanTT&&(b.ngayHanTT<now||(b.ngayHanTT>=now&&b.ngayHanTT<=in7b))&&((b.tongTien||0)-(b.daThu||0))>0).length;
   const nv=HD.filter(h=>h.status==='active'&&h.thuGomTiep&&h.thuGomTiep>=now&&h.thuGomTiep<=addDays(now,7)).length
     +HD.filter(h=>h.status==='active'&&!h.noRenew&&h.ngaykt&&diffDays(h.ngaykt,now)<=30&&h.ngaykt>=now).length
-    +sapChot;
+    +sapChot+congNoHanCount;
   ['nb-cn','bn-cn'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=cn;el.style.display=cn?'':'none';}});
   ['nb-nv','bn-nv'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=nv;el.style.display=nv?'':'none';}});
 }
