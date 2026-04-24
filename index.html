@@ -185,13 +185,64 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 /* PROGRESS */
 .prog-wrap{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:5px;}
 .prog-bar{height:100%;background:var(--accent);border-radius:3px;}
-/* MOBILE */
-@media(max-width:900px){
-  .sidebar{width:56px;}
-  .sb-logo h1,.sb-logo span,.nav-sec,.ni span,.nb{display:none;}
-  .ni{justify-content:center;padding:13px;}
-  .content{margin-left:56px;padding:14px;}
-  .stats{grid-template-columns:1fr 1fr;}
+/* MOBILE - Bottom nav for phones */
+@media(max-width:768px){
+  /* Hide sidebar completely on mobile */
+  .sidebar{display:none;}
+  .content{margin-left:0;padding:12px 12px 80px;}
+  /* Stats 2 cols */
+  .stats{grid-template-columns:1fr 1fr;gap:10px;}
+  .sc .val{font-size:18px;}
+  /* Dashboard grids stack */
+  #page-dashboard > div[style*="grid-template-columns:1fr 1fr"]{
+    display:block!important;
+  }
+  #page-dashboard .card{margin-bottom:12px;}
+  /* Page header stack */
+  .ph{flex-direction:column;gap:8px;align-items:flex-start;}
+  /* Card title smaller */
+  .ct{font-size:11px;}
+  /* Tables scroll */
+  .tw{font-size:12px;}
+  thead th{padding:6px 8px;font-size:10px;}
+  tbody td{padding:8px;}
+  /* Forms */
+  .g2,.g3,.g4{grid-template-columns:1fr!important;}
+  .gf{grid-column:1!important;}
+  /* Modal full screen */
+  .ov{padding:0;align-items:flex-end;}
+  .modal,.modal-lg,.modal-xl{width:100%!important;max-width:100%;border-radius:16px 16px 0 0;max-height:92vh;}
+  /* Buttons smaller */
+  .btn{font-size:12px;padding:7px 11px;}
+  /* Bottom nav bar */
+  .bottom-nav{
+    display:flex!important;
+    position:fixed;bottom:0;left:0;right:0;z-index:100;
+    background:var(--text);border-top:1px solid rgba(255,255,255,.1);
+    padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+  }
+  .bn-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    gap:2px;padding:4px 2px;cursor:pointer;
+    color:rgba(255,255,255,.5);font-size:9px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.04em;
+    border:none;background:none;font-family:inherit;
+    position:relative;
+  }
+  .bn-item.active{color:#fff;}
+  .bn-item .bn-ic{font-size:20px;line-height:1;}
+  .bn-badge{
+    position:absolute;top:0;right:50%;transform:translateX(10px);
+    background:var(--danger);color:#fff;border-radius:10px;
+    padding:1px 5px;font-size:9px;font-weight:700;
+  }
+  /* Card action buttons wrap */
+  .ch{flex-wrap:wrap;gap:8px;}
+  /* No-print on mobile = smaller */
+  .no-print button{font-size:11px!important;}
+}
+@media(min-width:769px){
+  .bottom-nav{display:none;}
 }
 </style>
 </head>
@@ -829,7 +880,12 @@ function navTo(el){
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   el.classList.add('active');
+  // Sync bottom nav
   const p=el.dataset.page;
+  document.querySelectorAll('.bn-item').forEach(x=>{
+    if(x.dataset.page===p) x.classList.add('active');
+    else x.classList.remove('active');
+  });
   document.getElementById('page-'+p).classList.add('active');
   if(p==='dashboard') renderDashboard();
   else if(p==='hdList') renderHD();
@@ -1103,8 +1159,7 @@ function filterHD(f,el){
 }
 function renderHD(){
   const now=todayStr();
-  let list=HD.filter(h=>h.status==='active'||h.status==='expired'&&h.ngaykt>=addDays(now,-30));
-  list=list.filter(h=>h.status!=='cancelled'&&h.status!=='expired');
+  let list=HD.filter(h=>h.status==='active');
   if(hdFilter==='all'){}
   else if(['Khoán năm','Khoán tháng','Đơn giá','Phế liệu','NCC'].includes(hdFilter)) list=list.filter(h=>h.loai===hdFilter);
   else if(hdFilter==='chua_tt') list=list.filter(h=>h.ttTT!=='da'&&h.loai!=='Đơn giá');
@@ -1858,10 +1913,17 @@ function updateBadges(){
   const cn=HD.filter(h=>h.status==='active'&&h.loai!=='Đơn giá'&&h.ttTT!=='da').length+BK.filter(b=>b.ttTT!=='da').length;
   const nv=HD.filter(h=>h.status==='active'&&h.thuGomTiep&&h.thuGomTiep>=now&&h.thuGomTiep<=addDays(now,7)).length
     +HD.filter(h=>h.status==='active'&&!h.noRenew&&h.ngaykt&&diffDays(h.ngaykt,now)<=30&&h.ngaykt>=now).length;
-  const bcn=document.getElementById('nb-cn');
-  const bnv=document.getElementById('nb-nv');
-  bcn.textContent=cn;bcn.style.display=cn?'':'none';
-  bnv.textContent=nv;bnv.style.display=nv?'':'none';
+  ['nb-cn','bn-cn'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=cn;el.style.display=cn?'':'none';}});
+  ['nb-nv','bn-nv'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=nv;el.style.display=nv?'':'none';}});
+}
+function syncBottomNav(el){
+  document.querySelectorAll('.bn-item').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  // Also sync sidebar
+  document.querySelectorAll('.ni').forEach(x=>{
+    if(x.dataset.page===el.dataset.page) x.classList.add('active');
+    else x.classList.remove('active');
+  });
 }
 
 // ===================== MODAL HELPERS =====================
