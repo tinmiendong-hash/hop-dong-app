@@ -1966,7 +1966,7 @@ updateBadges();
 </script>
 <script>
 (function(){
-  // Hash of password: Donttry1@@
+  // Hash of password: @@
   const HASH = '8a6172f9b3c4e5d2a1f8b7c6e5d4a3f2b1c8e7d6a5f4b3c2e1d8a7f6b5c4e3d2';
   const SESSION_KEY = 'tg_auth_v1';
   const MAX_ATTEMPTS = 5;
@@ -1996,7 +1996,7 @@ updateBadges();
     const pw = document.getElementById('pw-input').value;
     const hash = await sha256(pw);
     // Compare with stored password hash
-    const correct = await sha256('Donttry1@@');
+    const correct = await sha256('@@');
     if(hash === correct) {
       sessionStorage.setItem(SESSION_KEY, '1');
       document.getElementById('login-screen').style.display='none';
