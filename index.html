@@ -2900,7 +2900,9 @@ async function syncDown() {
     localStorage.setItem('hd_v3', JSON.stringify(HD));
     localStorage.setItem('bk_v3', JSON.stringify(BK));
     localStorage.setItem('baogia_v3', JSON.stringify(BAOGIA));
-    renderAll();
+    // Safe call - renderAll may not be defined yet on first load
+    if(typeof renderAll === 'function') renderAll();
+    else renderDashboard();
     showSyncStatus('✅ ' + new Date().toLocaleTimeString('vi-VN'));
   } catch(e) {
     const msg = e?.message || String(e);
@@ -2963,7 +2965,10 @@ async function _syncAllUp() {
 }
 
 // On first load: get from cloud
-window.addEventListener('load', ()=>{ syncDown(); });
+// Safe init - wait for all functions to be defined
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{ syncDown(); }, 100);
+});
 
 
 // ===================== TRA CỨU MST =====================
