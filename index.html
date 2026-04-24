@@ -611,11 +611,12 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
         </div>
         <span class="hint" id="mst-status"></span>
       </div>
-      <div class="fg"><label>Số điện thoại</label><input id="hd-sdt" placeholder="0901..."></div>
+      <div class="fg"><label>Số điện thoại công ty</label><input id="hd-sdt" placeholder="0901..."></div>
       <div class="fg"><label>Email</label><input id="hd-email" placeholder="email@..."></div>
       <div class="fg"><label>Địa chỉ công ty / cá nhân</label><input id="hd-diachi1" placeholder="Địa chỉ đăng ký..."></div>
       <div class="fg"><label>Địa chỉ thu gom (nếu khác)</label><input id="hd-diachi2" placeholder="Để trống nếu giống trên"></div>
       <div class="fg"><label>Người phụ trách</label><input id="hd-phuTrach" placeholder="Tên nhân viên phụ trách"></div>
+      <div class="fg"><label>SĐT người phụ trách</label><input id="hd-sdtPT" placeholder="0901..."></div>
       <div class="fg"><label>Ghi chú khách hàng</label><input id="hd-ghichu" placeholder="Ghi chú..."></div>
     </div>
     <div class="sl">Thông tin hợp đồng</div>
@@ -1177,7 +1178,7 @@ function openModalHD(fromBG){
   openModal('modal-hd');
 }
 function clearHDForm(){
-  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayTT'].forEach(id=>{
+  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-sdtPT','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayTT'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   document.getElementById('hd-giatri').value='';
@@ -1210,6 +1211,7 @@ function editHD(id){
   document.getElementById('hd-diachi1').value=h.diachi1||'';
   document.getElementById('hd-diachi2').value=h.diachi2||'';
   document.getElementById('hd-phuTrach').value=h.phuTrach||'';
+  document.getElementById('hd-sdtPT').value=h.sdtPT||'';
   document.getElementById('hd-ghichu').value=h.ghichu||'';
   document.getElementById('hd-soHD').value=h.soHD||'';
   document.getElementById('hd-ngaybd').value=h.ngaybd||'';
@@ -1258,6 +1260,7 @@ function saveHD(){
     diachi1:document.getElementById('hd-diachi1').value.trim(),
     diachi2:document.getElementById('hd-diachi2').value.trim(),
     phuTrach:document.getElementById('hd-phuTrach').value.trim(),
+    sdtPT:document.getElementById('hd-sdtPT').value.trim(),
     ghichu:document.getElementById('hd-ghichu').value.trim(),
     soHD:document.getElementById('hd-soHD').value.trim(),
     ngaybd:document.getElementById('hd-ngaybd').value,
@@ -1392,7 +1395,7 @@ function renderHD(){
       <td>${loaiBadge(h.loai)}</td>
       <td><strong>${h.ten}</strong>${h.soHD?`<div style="font-size:11px;color:var(--muted)">${h.soHD}</div>`:''}${h.mst?`<div style="font-size:10px;color:var(--muted2)">MST: ${h.mst}</div>`:''}</td>
       <td>${h.sdt||'—'}</td>
-      <td style="font-size:12px;color:var(--muted)">${h.phuTrach||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${h.phuTrach||'—'}${h.sdtPT?`<div style='font-size:11px'>${h.sdtPT}</div>`:''}</td>
       <td class="money" style="font-size:12px">${giaStr}${h.hoahong?`<div style="font-size:10px;color:var(--muted2)">${h.hoahong}% HH</div>`:''}</td>
       <td><span class="badge b-gr" style="font-size:11px">${h.tanSuat||'—'}</span></td>
       <td style="text-align:center">${remStr}</td>
