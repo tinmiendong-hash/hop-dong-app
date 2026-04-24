@@ -623,7 +623,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
     <button class="btn br bs no-print" onclick="emptyTrash()">🗑️ Xóa tất cả vĩnh viễn</button>
   </div>
   <div class="card">
-    <div class="card-header"><div class="ct">Hợp đồng & Báo giá đã xóa</div></div>
+    <div class="ch"><div class="ct">Hợp đồng & Báo giá đã xóa</div></div>
     <div id="trash-list"></div>
   </div>
 </div>
@@ -1682,8 +1682,10 @@ function delHD(id){
   TRASH.push(h);
   HD=HD.filter(x=>x.id!==id);
   persist();
-  sbDelete('hop_dong',id).then(()=>showSyncStatus('✅ Đã xóa'));
-  renderHD();toast('🗑️ Đã chuyển vào thùng rác');
+  // Move to trash on cloud: delete from hop_dong, upsert to trash table
+  sbDelete('hop_dong',id);
+  sbUpsert('thung_rac', h);
+  renderHD();renderTrash();toast('🗑️ Đã chuyển vào thùng rác');
 }
 
 // ===================== LỊCH SỬ HĐ =====================
@@ -2553,8 +2555,9 @@ function delBG(id){
   TRASH.push(g);
   BAOGIA=BAOGIA.filter(x=>x.id!==id);
   persist();
-  sbDelete('bao_gia',id).then(()=>showSyncStatus('✅ Đã xóa'));
-  renderBaoGiaList();toast('🗑️ Đã chuyển vào thùng rác');
+  sbDelete('bao_gia',id);
+  sbUpsert('thung_rac', g);
+  renderBaoGiaList();renderTrash();toast('🗑️ Đã chuyển vào thùng rác');
 }
 
 // ===================== DASHBOARD =====================
@@ -2717,33 +2720,29 @@ function renderTrash(){
 function restoreItem(id){
   const idx = TRASH.findIndex(x=>x.id===id);
   if(idx<0) return;
-  const item = TRASH[idx];
+  const item = {...TRASH[idx]};
   TRASH.splice(idx,1);
-  if(item._deletedFrom==='hd') HD.push(item);
-  else if(item._deletedFrom==='bg') BAOGIA.push(item);
+  // Remove internal trash markers
+  delete item._deletedAt; delete item._deletedFrom;
+  if(item._deletedFrom==='hd'||!item._deletedFrom) { item._deletedFrom=undefined; HD.push(item); sbUpsert('hop_dong',item); }
+  else if(item._deletedFrom==='bg') { BAOGIA.push(item); sbUpsert('bao_gia',item); }
+  sbDelete('thung_rac', id);
   persist();
-  renderTrash();
+  renderTrash(); renderHD();
   toast('↩️ Đã khôi phục');
 }
 function deleteForever(id){
   if(!confirm('Xóa vĩnh viễn? Không thể khôi phục!')) return;
-  const item = TRASH.find(x=>x.id===id);
   TRASH = TRASH.filter(x=>x.id!==id);
   persist();
-  if(item) {
-    const tbl = item._deletedFrom==='hd'?'hop_dong':'bao_gia';
-    sbDelete(tbl, id);
-  }
+  sbDelete('thung_rac', id);
   renderTrash();
   toast('🗑️ Đã xóa vĩnh viễn');
 }
 function emptyTrash(){
   if(!TRASH.length){toast('Thùng rác đã trống');return;}
   if(!confirm(`Xóa vĩnh viễn ${TRASH.length} mục? Không thể khôi phục!`)) return;
-  TRASH.forEach(item=>{
-    const tbl = item._deletedFrom==='hd'?'hop_dong':'bao_gia';
-    sbDelete(tbl, item.id);
-  });
+  TRASH.forEach(item=>{ sbDelete('thung_rac', item.id); });
   TRASH=[];
   persist();
   renderTrash();
@@ -2856,7 +2855,7 @@ function drawerNav(el){
 
 // ===================== SUPABASE SYNC =====================
 const SB_URL = 'https://znzabeihtdpvtxsbfvwq.supabase.co';
-const SB_KEY = 'sb_publishable_jbX-z2ecvajT2x0mmGTs2w_tjLO2kY0';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpuemFiZWlodGRwdnR4c2JmdndxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwMDE0MzAsImV4cCI6MjA5MjU3NzQzMH0.GcFxYsUhrKDwx_M0h_w0nkNq6I2RbRmVhNGyljAPFWU';
 
 async function sbFetch(method, table, body=null, filter=null) {
   const url = filter
@@ -2887,14 +2886,16 @@ async function sbDelete(table, id) {
 async function syncDown() {
   try {
     showSyncStatus('⏳ Đang tải...');
-    const [hdRows, bkRows, bgRows] = await Promise.all([
+    const [hdRows, bkRows, bgRows, trashRows] = await Promise.all([
       sbFetch('GET', 'hop_dong?select=data&order=updated_at.desc'),
       sbFetch('GET', 'bang_ke?select=data&order=updated_at.desc'),
       sbFetch('GET', 'bao_gia?select=data&order=updated_at.desc'),
+      sbFetch('GET', 'thung_rac?select=data&order=updated_at.desc'),
     ]);
     if(Array.isArray(hdRows)) HD = hdRows.map(r=>r.data).filter(Boolean);
     if(Array.isArray(bkRows)) BK = bkRows.map(r=>r.data).filter(Boolean);
     if(Array.isArray(bgRows)) BAOGIA = bgRows.map(r=>r.data).filter(Boolean);
+    if(Array.isArray(trashRows)) TRASH = trashRows.map(r=>r.data).filter(Boolean);
     // backup to localStorage
     localStorage.setItem('hd_v3', JSON.stringify(HD));
     localStorage.setItem('bk_v3', JSON.stringify(BK));
@@ -2938,6 +2939,7 @@ async function _syncAllUp() {
       ...HD.map(h=>sbUpsert('hop_dong', h)),
       ...BK.map(b=>sbUpsert('bang_ke', b)),
       ...BAOGIA.map(g=>sbUpsert('bao_gia', g)),
+      ...TRASH.map(t=>sbUpsert('thung_rac', t)),
     ]);
     showSyncStatus('✅ ' + new Date().toLocaleTimeString('vi-VN'));
   } catch(e) {
