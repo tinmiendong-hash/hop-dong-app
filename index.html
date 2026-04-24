@@ -1991,7 +1991,7 @@ updateBadges();
     const pw = document.getElementById('pw-input').value;
     const hash = await sha256(pw);
     // Compare with stored password hash
-    const correct = await sha256('Donttry1@@');
+    const correct = await sha256('@@');
     if(hash === correct) {
       sessionStorage.setItem(SESSION_KEY, '1');
       document.getElementById('login-screen').style.display='none';
