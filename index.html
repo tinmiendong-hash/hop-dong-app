@@ -391,6 +391,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
   <div class="sb-logo">
     <h1>♻️ Thu Gom<br>Manager</h1>
     <span>v3.0</span>
+    <div id="sync-status" style="font-size:10px;color:rgba(255,255,255,.4);margin-top:6px;line-height:1.4">Đang kết nối...</div>
+    <button onclick="syncDown()" style="margin-top:6px;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:inherit">↺ Đồng bộ</button>
   </div>
   <div class="nav">
     <div class="nav-sec">Tổng quan</div>
@@ -557,6 +559,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 <div class="mobile-topbar" id="mobile-topbar">
   <div class="tb-title">♻️ <span id="topbar-title">Dashboard</span></div>
   <div class="tb-right">
+    <span id="sync-status" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:6px;max-width:120px;text-align:right;line-height:1.2"></span>
     <button class="tb-menu-btn" onclick="openDrawer()">☰</button>
   </div>
 </div>
@@ -2195,6 +2198,95 @@ function drawerNav(el){
   const title = document.getElementById('topbar-title');
   if(title) title.textContent = PAGE_NAMES[el.dataset.page] || '♻️ Thu Gom';
 }
+
+
+// ===================== SUPABASE SYNC =====================
+const SB_URL = 'https://znzabeihtdpvtxsbfvwq.supabase.co';
+const SB_KEY = 'sb_publishable_jbX-z2ecvajT2x0mmGTs2w_tjLO2kY0';
+
+async function sbFetch(method, table, body=null, id=null) {
+  const url = id ? `${SB_URL}/rest/v1/${table}?id=eq.${id}` : `${SB_URL}/rest/v1/${table}`;
+  const headers = {
+    'apikey': SB_KEY,
+    'Authorization': `Bearer ${SB_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': method==='POST'?'resolution=merge-duplicates':'return=minimal'
+  };
+  const res = await fetch(url, { method, headers, body: body?JSON.stringify(body):null });
+  if(method==='GET') return await res.json();
+  return res.ok;
+}
+
+// Upload all local data to Supabase
+async function syncUp() {
+  try {
+    showSyncStatus('⏳ Đang lưu...');
+    // Upsert HD
+    for(const h of HD) {
+      await sbFetch('POST', 'hop_dong', {id:h.id, data:h, updated_at: new Date().toISOString()});
+    }
+    // Upsert BK
+    for(const b of BK) {
+      await sbFetch('POST', 'bang_ke', {id:b.id, data:b, updated_at: new Date().toISOString()});
+    }
+    // Upsert BAOGIA
+    for(const g of BAOGIA) {
+      await sbFetch('POST', 'bao_gia', {id:g.id, data:g, updated_at: new Date().toISOString()});
+    }
+    localStorage.setItem('last_sync', new Date().toISOString());
+    showSyncStatus('✅ Đã lưu ' + new Date().toLocaleTimeString('vi-VN'));
+  } catch(e) {
+    showSyncStatus('❌ Lỗi lưu: ' + e.message);
+    console.error(e);
+  }
+}
+
+// Download latest data from Supabase
+async function syncDown() {
+  try {
+    showSyncStatus('⏳ Đang tải...');
+    const [hdRows, bkRows, bgRows] = await Promise.all([
+      sbFetch('GET', 'hop_dong?select=data&order=updated_at.desc'),
+      sbFetch('GET', 'bang_ke?select=data&order=updated_at.desc'),
+      sbFetch('GET', 'bao_gia?select=data&order=updated_at.desc'),
+    ]);
+    if(Array.isArray(hdRows) && hdRows.length) {
+      HD = hdRows.map(r=>r.data).filter(Boolean);
+    }
+    if(Array.isArray(bkRows) && bkRows.length) {
+      BK = bkRows.map(r=>r.data).filter(Boolean);
+    }
+    if(Array.isArray(bgRows) && bgRows.length) {
+      BAOGIA = bgRows.map(r=>r.data).filter(Boolean);
+    }
+    persist(); // also save to localStorage as backup
+    renderAll();
+    showSyncStatus('✅ Cập nhật ' + new Date().toLocaleTimeString('vi-VN'));
+  } catch(e) {
+    showSyncStatus('❌ Lỗi tải: ' + e.message);
+    console.error(e);
+  }
+}
+
+function showSyncStatus(msg) {
+  const el = document.getElementById('sync-status');
+  if(el) el.textContent = msg;
+}
+
+// Override persist to also sync up
+const _origPersist = persist;
+window.persist = function() {
+  _origPersist();
+  syncUp();
+};
+
+// On load: sync down from cloud first
+window.addEventListener('load', async () => {
+  await syncDown();
+});
+
+// Auto sync down every 30 seconds (for multi-device)
+setInterval(syncDown, 30000);
 
 </script>
 
