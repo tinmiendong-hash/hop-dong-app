@@ -603,7 +603,14 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
     <div class="sl">Thông tin khách hàng</div>
     <div class="g2" style="margin-bottom:12px">
       <div class="fg"><label>Tên khách hàng <span class="req">*</span></label><input id="hd-ten" placeholder="Công ty / Cá nhân"></div>
-      <div class="fg"><label>Mã số thuế</label><input id="hd-mst" placeholder="0123456789"></div>
+      <div class="fg">
+        <label>Mã số thuế</label>
+        <div style="display:flex;gap:6px">
+          <input id="hd-mst" placeholder="0123456789" style="flex:1">
+          <button type="button" class="btn bou bs no-print" onclick="traCuuMST()" title="Tra cứu tự động">🔍 Tra cứu</button>
+        </div>
+        <span class="hint" id="mst-status"></span>
+      </div>
       <div class="fg"><label>Số điện thoại</label><input id="hd-sdt" placeholder="0901..."></div>
       <div class="fg"><label>Email</label><input id="hd-email" placeholder="email@..."></div>
       <div class="fg"><label>Địa chỉ công ty / cá nhân</label><input id="hd-diachi1" placeholder="Địa chỉ đăng ký..."></div>
@@ -614,7 +621,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
     <div class="sl">Thông tin hợp đồng</div>
     <div class="g3" style="margin-bottom:12px">
       <div class="fg"><label>Số hợp đồng</label><input id="hd-soHD" placeholder="HD-2025-001"></div>
-      <div class="fg"><label>Ngày hiệu lực <span class="req">*</span></label><input id="hd-ngaybd" type="date"></div>
+      <div class="fg"><label>Ngày hiệu lực <span class="req">*</span></label><input id="hd-ngaybd" type="date" onchange="autoSetNgayKT(this.value)"></div>
       <div class="fg"><label>Ngày hết hạn <span class="req">*</span></label><input id="hd-ngaykt" type="date"></div>
     </div>
     <!-- GIÁ TRỊ HĐ - hiện cho khoán năm/tháng/phế liệu/NCC -->
@@ -633,7 +640,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
           <label>Thuế VAT</label>
           <select id="hd-vat" onchange="calcVAT()">
             <option value="0">Không có VAT</option>
-            <option value="8">8% VAT</option>
+            <option value="8" selected>8% VAT</option>
             <option value="10">10% VAT</option>
           </select>
         </div>
@@ -1096,6 +1103,12 @@ function onTanSuatChange(){
   const v=document.getElementById('hd-tanSuat').value;
   document.getElementById('ts-custom-wrap').style.display=v==='Tùy chỉnh'?'flex':'none';
 }
+function autoSetNgayKT(ngaybd){
+  if(!ngaybd) return;
+  const d = new Date(ngaybd);
+  d.setDate(d.getDate()+364);
+  document.getElementById('hd-ngaykt').value = d.toISOString().split('T')[0];
+}
 function stepGiaTri(n){
   const el=document.getElementById('hd-giatri');
   let v=parseMoney(el.value)+n;
@@ -1147,6 +1160,7 @@ function openModalHD(fromBG){
   clearHDForm();
   setHDLoai('Khoán năm',document.querySelector('#hd-loai-tabs .ttab'));
   document.getElementById('hd-ngaybd').value=todayStr();
+  autoSetNgayKT(todayStr());
   if(fromBG){
     // Pre-fill from baogia
     const bg=BAOGIA.find(b=>b.id===fromBG);
@@ -1167,7 +1181,7 @@ function clearHDForm(){
     const el=document.getElementById(id);if(el)el.value='';
   });
   document.getElementById('hd-giatri').value='';
-  if(document.getElementById('hd-vat')) document.getElementById('hd-vat').value='0';
+  if(document.getElementById('hd-vat')) document.getElementById('hd-vat').value='8';
   if(document.getElementById('hd-giatri-vat')) document.getElementById('hd-giatri-vat').value='';
   if(document.getElementById('hd-vat-hint')) document.getElementById('hd-vat-hint').textContent='';
   document.getElementById('hd-daThu').value='0';
@@ -2346,6 +2360,44 @@ async function _syncAllUp() {
 
 // On first load: get from cloud
 window.addEventListener('load', ()=>{ syncDown(); });
+
+
+// ===================== TRA CỨU MST =====================
+async function traCuuMST(){
+  const mst = document.getElementById('hd-mst').value.trim();
+  if(!mst){ toast('Nhập mã số thuế trước','error'); return; }
+  const status = document.getElementById('mst-status');
+  status.textContent = '⏳ Đang tra cứu...';
+  status.style.color = 'var(--muted)';
+  try {
+    // Try esgoo.net API (free, no key needed)
+    const res = await fetch(`https://esgoo.net/api-mst/${mst}.htm`);
+    const data = await res.json();
+    if(data.error === 0 && data.data) {
+      const d = data.data;
+      // Fill fields
+      if(d.ten) document.getElementById('hd-ten').value = d.ten;
+      if(d.dc)  document.getElementById('hd-diachi1').value = d.dc;
+      // Try to fill cty name same as ten
+      status.textContent = `✅ Tìm thấy: ${d.ten || ''}`;
+      status.style.color = 'var(--accent)';
+      // Show extra info
+      let extra = [];
+      if(d.daidien) extra.push('Đại diện: ' + d.daidien);
+      if(d.tinhtrang) extra.push(d.tinhtrang);
+      if(extra.length) status.textContent += ' · ' + extra.join(' · ');
+      toast('✅ Đã điền thông tin từ MST');
+    } else {
+      status.textContent = '❌ Không tìm thấy MST này';
+      status.style.color = 'var(--danger)';
+    }
+  } catch(e) {
+    // Fallback: open thuvienphapluat in new tab
+    status.textContent = '⚠️ Không tra được tự động — đang mở trang tra cứu...';
+    status.style.color = 'var(--warn)';
+    window.open(`https://thuvienphapluat.vn/ma-so-thue/${mst}`, '_blank');
+  }
+}
 
 </script>
 
