@@ -608,7 +608,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
       <div class="fg"><label>Email</label><input id="hd-email" placeholder="email@..."></div>
       <div class="fg"><label>Địa chỉ công ty / cá nhân</label><input id="hd-diachi1" placeholder="Địa chỉ đăng ký..."></div>
       <div class="fg"><label>Địa chỉ thu gom (nếu khác)</label><input id="hd-diachi2" placeholder="Để trống nếu giống trên"></div>
-      <div class="fg"><label>Người phụ trách</label><input id="hd-phutach" placeholder="Tên nhân viên phụ trách"></div>
+      <div class="fg"><label>Người phụ trách</label><input id="hd-phuTrach" placeholder="Tên nhân viên phụ trách"></div>
       <div class="fg"><label>Ghi chú khách hàng</label><input id="hd-ghichu" placeholder="Ghi chú..."></div>
     </div>
     <div class="sl">Thông tin hợp đồng</div>
@@ -618,20 +618,37 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
       <div class="fg"><label>Ngày hết hạn <span class="req">*</span></label><input id="hd-ngaykt" type="date"></div>
     </div>
     <!-- GIÁ TRỊ HĐ - hiện cho khoán năm/tháng/phế liệu/NCC -->
-    <div id="hd-giatri-wrap" class="g2" style="margin-bottom:12px">
-      <div class="fg">
-        <label>Giá trị HĐ / <span id="hd-giatri-unit">năm</span> (VND) <span class="req">*</span></label>
-        <div class="num-stepper">
-          <button type="button" onclick="stepGiaTri(-500000)">−</button>
-          <input id="hd-giatri" type="text" placeholder="5,000,000" oninput="fmtGiaTri(this)" style="min-width:140px">
-          <button type="button" onclick="stepGiaTri(500000)">+</button>
+    <div id="hd-giatri-wrap" style="margin-bottom:12px">
+      <div class="g3" style="margin-bottom:10px">
+        <div class="fg">
+          <label>Giá trị HĐ / <span id="hd-giatri-unit">năm</span> (chưa VAT) <span class="req">*</span></label>
+          <div class="num-stepper">
+            <button type="button" onclick="stepGiaTri(-500000)">−</button>
+            <input id="hd-giatri" type="text" placeholder="5,000,000" oninput="fmtGiaTri(this);calcVAT()" style="min-width:120px">
+            <button type="button" onclick="stepGiaTri(500000)">+</button>
+          </div>
+          <span class="hint">Bấm − / + để tăng giảm 500,000 VND</span>
         </div>
-        <span class="hint">Bấm − / + để tăng giảm 500,000 VND</span>
+        <div class="fg">
+          <label>Thuế VAT</label>
+          <select id="hd-vat" onchange="calcVAT()">
+            <option value="0">Không có VAT</option>
+            <option value="8">8% VAT</option>
+            <option value="10">10% VAT</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Giá đã gồm VAT (VND)</label>
+          <input id="hd-giatri-vat" type="text" readonly style="background:var(--accent-l);color:var(--accent);font-weight:700;cursor:default" placeholder="—">
+          <span class="hint" id="hd-vat-hint"></span>
+        </div>
       </div>
-      <div class="fg">
-        <label>% Hoa hồng</label>
-        <input id="hd-hoahong" type="number" placeholder="0" min="0" max="100" step="0.5">
-        <span class="hint">% hoa hồng trên giá trị hóa đơn</span>
+      <div class="g2">
+        <div class="fg">
+          <label>% Hoa hồng</label>
+          <input id="hd-hoahong" type="number" placeholder="0" min="0" max="100" step="0.5">
+          <span class="hint">% hoa hồng trên giá trị hóa đơn</span>
+        </div>
       </div>
     </div>
     <!-- ĐƠN GIÁ - hiện cho loại đơn giá -->
@@ -1084,6 +1101,23 @@ function stepGiaTri(n){
   let v=parseMoney(el.value)+n;
   if(v<0)v=0;
   el.value=v>0?v.toLocaleString('vi-VN'):'';
+  calcVAT();
+}
+function calcVAT(){
+  const giatri=parseMoney(document.getElementById('hd-giatri').value)||0;
+  const vat=Number(document.getElementById('hd-vat')?.value||0);
+  const vatEl=document.getElementById('hd-giatri-vat');
+  const hintEl=document.getElementById('hd-vat-hint');
+  if(!vatEl) return;
+  if(vat===0){
+    vatEl.value=giatri>0?giatri.toLocaleString('vi-VN')+' VND':'';
+    if(hintEl) hintEl.textContent='Không tính VAT';
+  } else {
+    const vatAmt=Math.round(giatri*vat/100);
+    const total=giatri+vatAmt;
+    vatEl.value=total>0?total.toLocaleString('vi-VN')+' VND':'';
+    if(hintEl) hintEl.textContent=`VAT ${vat}%: +${vatAmt.toLocaleString('vi-VN')} VND`;
+  }
 }
 function stepDonGia(n){
   const el=document.getElementById('hd-dongia');
@@ -1133,6 +1167,9 @@ function clearHDForm(){
     const el=document.getElementById(id);if(el)el.value='';
   });
   document.getElementById('hd-giatri').value='';
+  if(document.getElementById('hd-vat')) document.getElementById('hd-vat').value='0';
+  if(document.getElementById('hd-giatri-vat')) document.getElementById('hd-giatri-vat').value='';
+  if(document.getElementById('hd-vat-hint')) document.getElementById('hd-vat-hint').textContent='';
   document.getElementById('hd-daThu').value='0';
   document.getElementById('hd-dongia').value='';
   document.getElementById('hd-dongialan').value='';
@@ -1164,6 +1201,8 @@ function editHD(id){
   document.getElementById('hd-ngaybd').value=h.ngaybd||'';
   document.getElementById('hd-ngaykt').value=h.ngaykt||'';
   document.getElementById('hd-giatri').value=h.giatri?(h.giatri).toLocaleString('vi-VN'):'';
+  if(document.getElementById('hd-vat')) document.getElementById('hd-vat').value=h.vat||0;
+  calcVAT();
   document.getElementById('hd-hoahong').value=h.hoahong||0;
   document.getElementById('hd-hoahong-dg').value=h.hoahong||0;
   document.getElementById('hd-tanSuat').value=h.tanSuat||'1 lần/năm';
@@ -1189,6 +1228,7 @@ function editHD(id){
   openModal('modal-hd');
 }
 function saveHD(){
+  try{
   const ten=document.getElementById('hd-ten').value.trim();
   if(!ten){toast('Vui lòng nhập tên khách hàng','error');return;}
   const ts=document.getElementById('hd-tanSuat').value;
@@ -1209,6 +1249,8 @@ function saveHD(){
     ngaybd:document.getElementById('hd-ngaybd').value,
     ngaykt:document.getElementById('hd-ngaykt').value,
     giatri:parseMoney(document.getElementById('hd-giatri').value),
+    vat:Number(document.getElementById('hd-vat')?.value||0),
+    giatriCoVAT:(()=>{const g=parseMoney(document.getElementById('hd-giatri').value);const v=Number(document.getElementById('hd-vat')?.value||0);return Math.round(g*(1+v/100));})(),
     hoahong:Number(document.getElementById(hdLoai==='Đơn giá'?'hd-hoahong-dg':'hd-hoahong').value)||0,
     tanSuat:ts,tsCustom,
     thuGomTiep:document.getElementById('hd-thuGomTiep').value,
@@ -1228,6 +1270,7 @@ function saveHD(){
   else HD.push(obj);
   persist();closeModal('modal-hd');renderHD();renderDashboard();updateBadges();
   toast('✅ Đã lưu hợp đồng');
+  }catch(e){toast('❌ Lỗi: '+e.message,'error');console.error(e);}
 }
 
 // ===================== HỦY HĐ =====================
@@ -1329,7 +1372,7 @@ function renderHD(){
   tbody.innerHTML=list.map(h=>{
     const rem=calcRemaining(h);
     const remStr=rem!==null?`<span style="font-size:12px;color:${rem<=1?'var(--danger)':'var(--muted)'}">${rem} lần</span>`:'—';
-    const giaStr=h.loai==='Đơn giá'?(h.dgLoai==='so_lan'?`${fmtMoney(h.dongialan)}/lần`:`${fmtMoney(h.dongia)}/${h.dvt}`):fmtMoney(h.giatri);
+    const giaStr=h.loai==='Đơn giá'?(h.dgLoai==='so_lan'?`${fmtMoney(h.dongialan)}/lần`:`${fmtMoney(h.dongia)}/${h.dvt}`):(h.vat?`${fmtMoney(h.giatri)}<div style="font-size:10px;color:var(--accent)">+VAT ${h.vat}%: ${fmtMoney(h.giatriCoVAT)}</div>`:fmtMoney(h.giatri));
     const ttStr=h.loai==='Đơn giá'?`<span class="badge b-gr">—</span>`:ttBadge(h.ttTT,h.giatri,h.daThu);
     return`<tr>
       <td>${loaiBadge(h.loai)}</td>
