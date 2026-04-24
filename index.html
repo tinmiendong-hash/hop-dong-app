@@ -1461,8 +1461,23 @@ function saveHD(){
   };
   if(editHDId){const i=HD.findIndex(x=>x.id===editHDId);HD[i]=obj;}
   else HD.push(obj);
+  // Recalculate ngayHanTT for all related BK when hanTT changes
+  if(obj.hanTT){
+    BK.forEach((b,i)=>{
+      if(b.hdId!==obj.id) return;
+      if(b.ttTT==='da') return; // already paid, skip
+      // Recalc: ngayHanTT = ngayChot of that BK month + hanTT days
+      // Use BK createdAt or thang's last day as base
+      const [y,m] = (b.thang||thisMonth()).split('-').map(Number);
+      const ngayChot = obj.ngayChot || 25;
+      const chotDateStr = `${y}-${String(m).padStart(2,'0')}-${String(ngayChot).padStart(2,'0')}`;
+      const chotDate = new Date(chotDateStr);
+      chotDate.setDate(chotDate.getDate() + (obj.hanTT||0));
+      BK[i].ngayHanTT = chotDate.toISOString().split('T')[0];
+    });
+  }
   persist();closeModal('modal-hd');renderHD();renderDashboard();updateBadges();
-  toast('✅ Đã lưu hợp đồng');
+  toast('✅ Đã lưu hợp đồng — đã cập nhật hạn TT cho bảng kê liên quan');
   }catch(e){toast('❌ Lỗi: '+e.message,'error');console.error(e);}
 }
 
@@ -1760,7 +1775,21 @@ function onNLKhachChange(){
   const infoText=isKT?`Khoán tháng · Giá khoán: <strong>${fmtMoney(nlCurHD.giatri)}/tháng</strong>`
     :(isKL?`Đơn giá theo <strong>${nlCurHD.dvt}</strong> · Đơn giá: <strong>${fmtMoney(nlCurHD.dongia)}/${nlCurHD.dvt}</strong>`
     :`Đơn giá theo <strong>số lần</strong> · <strong>${fmtMoney(nlCurHD.dongialan)}/lần</strong>`);
-  info.innerHTML=`<div class="alert ag">${infoText}</div>`;
+  // Calculate expected ngayHanTT
+  let hanTTNote = '';
+  if(nlCurHD.hanTT && nlCurHD.ngayChot){
+    const thangVal = document.getElementById('nl-thang')?.value || thisMonth();
+    const [y,m] = thangVal.split('-').map(Number);
+    const nc = nlCurHD.ngayChot;
+    const chotD = new Date(`${y}-${String(m).padStart(2,'0')}-${String(nc).padStart(2,'0')}`);
+    const hanD = new Date(chotD); hanD.setDate(hanD.getDate()+(nlCurHD.hanTT||0));
+    const hanStr = hanD.toISOString().split('T')[0];
+    hanTTNote = ` · Chốt: <strong>ngày ${nc}</strong> · Hạn TT: <strong>${fmtDate(hanStr)}</strong> (sau ${nlCurHD.hanTT} ngày)`;
+    // Auto-fill ngayHanTT if empty
+    const hanEl = document.getElementById('nl-ngayHanTT');
+    if(hanEl && !hanEl.value) hanEl.value = hanStr;
+  }
+  info.innerHTML=`<div class="alert ag">${infoText}${hanTTNote}</div>`;
   document.getElementById('nl-tong-kl-wrap').style.display=(!isKT&&isKL)?'block':'none';
   document.getElementById('nl-tong-sl-wrap').style.display=(!isKT&&!isKL)?'block':'none';
   document.getElementById('nl-tong-lbl').textContent=`Tổng ${nlCurHD.dvt||'khối lượng'}`;
@@ -1867,13 +1896,17 @@ function saveNL(){
     ghichu:document.getElementById('nl-ghichu').value.trim()
   };
   if(ex){const i=BK.findIndex(b=>b.id===ex.id);BK[i]=obj;}else BK.push(obj);
-  // Auto set ngayHanTT for BK based on contract hanTT
+  // Auto set ngayHanTT for BK based on contract hanTT + ngayChot
   const hdForBK = HD.find(x=>x.id===hdId);
-  if(hdForBK && hdForBK.hanTT && !obj.ngayHanTT){
-    const today = new Date();
-    today.setDate(today.getDate() + (hdForBK.hanTT||0));
-    obj.ngayHanTT = today.toISOString().split('T')[0];
-    if(BK[BK.length-1] && BK[BK.length-1].id===obj.id) BK[BK.length-1].ngayHanTT = obj.ngayHanTT;
+  if(hdForBK && hdForBK.hanTT && !document.getElementById('nl-ngayHanTT')?.value){
+    // Base date = ngayChot of this BK's month
+    const [y,m] = (thang||thisMonth()).split('-').map(Number);
+    const ngayChot = hdForBK.ngayChot || 25;
+    const chotDate = new Date(`${y}-${String(m).padStart(2,'0')}-${String(ngayChot).padStart(2,'0')}`);
+    chotDate.setDate(chotDate.getDate() + (hdForBK.hanTT||0));
+    obj.ngayHanTT = chotDate.toISOString().split('T')[0];
+  } else if(document.getElementById('nl-ngayHanTT')?.value) {
+    obj.ngayHanTT = document.getElementById('nl-ngayHanTT').value;
   }
   persist();closeModal('modal-nl');renderBangKe();renderDashboard();updateBadges();toast('✅ Đã lưu bảng kê');
 }
