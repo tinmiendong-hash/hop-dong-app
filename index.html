@@ -513,7 +513,22 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 
 <!-- ========== NHẮC VIỆC ========== -->
 <div id="page-nhac" class="page">
-  <div class="ph"><div class="pt">Nhắc việc <small>Lịch thu gom, hóa đơn, gia hạn, bảng kê</small></div></div>
+  <div class="ph">
+    <div class="pt">Nhắc việc <small>Lịch thu gom, hóa đơn, gia hạn, bảng kê</small></div>
+    <button class="btn bou bs no-print" onclick="toggleNhacSettings()">💡 Hướng dẫn</button>
+  </div>
+
+  <!-- INFO: ngày chốt theo từng hợp đồng -->
+  <div class="card" id="nhac-settings" style="display:none;margin-bottom:18px;background:var(--accent-l);border:1px solid var(--accent)">
+    <div style="font-size:13px;color:var(--accent)">💡 <strong>Ngày chốt bảng kê & xuất hóa đơn</strong> được cài đặt trong từng hợp đồng (mục Lịch thu gom). Mở hợp đồng → chỉnh sửa → điền ngày chốt cho từng khách.</div>
+  </div>
+
+  <!-- NHẮC CHỐT BẢNG KÊ SẮP ĐẾN HẠN -->
+  <div class="card" id="nv-sap-chot-card" style="display:none;border:2px solid var(--orange);background:var(--orange-l);margin-bottom:18px">
+    <div class="ch"><div class="ct" style="color:var(--orange)">⏰ Sắp đến hạn chốt bảng kê</div></div>
+    <div id="nv-sap-chot"></div>
+  </div>
+
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
     <div class="card">
       <div class="ch"><div class="ct">🚛 Thu gom sắp tới (30 ngày)</div></div>
@@ -613,14 +628,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
       </div>
       <div class="fg"><label>Số điện thoại công ty</label><input id="hd-sdt" placeholder="0901..."></div>
       <div class="fg"><label>Email</label><input id="hd-email" placeholder="email@..."></div>
-      <div class="fg">
-        <label>Địa chỉ công ty / cá nhân</label>
-        <div style="display:flex;gap:6px">
-          <input id="hd-diachi1" placeholder="Địa chỉ đăng ký..." style="flex:1">
-          <button type="button" class="btn bou bs no-print" onclick="chuyenDiaChi()" title="Chuyển địa chỉ mới sau sáp nhập">🔄 Địa chỉ mới</button>
-        </div>
-        <span class="hint">Nhấn 🔄 để tra địa chỉ mới sau sáp nhập 2025</span>
-      </div>
+      <div class="fg"><label>Địa chỉ công ty / cá nhân</label><input id="hd-diachi1" placeholder="Địa chỉ đăng ký..."></div>
       <div class="fg"><label>Địa chỉ thu gom (nếu khác)</label><input id="hd-diachi2" placeholder="Để trống nếu giống trên"></div>
       <div class="fg"><label>Người phụ trách</label><input id="hd-phuTrach" placeholder="Tên nhân viên phụ trách"></div>
       <div class="fg"><label>SĐT người phụ trách</label><input id="hd-sdtPT" placeholder="0901..."></div>
@@ -805,8 +813,23 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
         <div class="fg"><label>Thành tiền</label><input id="nl-tong-tien" readonly style="background:var(--surface2)"></div>
       </div>
     </div>
-    <div id="nl-summary" style="display:none;margin-top:12px;padding:12px;background:var(--surface2);border-radius:var(--r)">
-      <div style="display:flex;justify-content:space-between"><span>Tổng thành tiền:</span><span class="money m-g" id="nl-total-disp">0 VND</span></div>
+    <div id="nl-summary" style="display:none;margin-top:12px;padding:14px;background:var(--surface2);border-radius:var(--r)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Thành tiền chưa VAT:</span><span class="money" id="nl-total-disp">0 VND</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center">
+        <span>Thuế VAT:</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="nl-vat" onchange="calcNLVAT()" style="padding:4px 8px;border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:12px;background:var(--surface)">
+            <option value="0">Không VAT</option>
+            <option value="8">8% VAT</option>
+            <option value="10">10% VAT</option>
+          </select>
+          <span class="money m-o" id="nl-vat-amt">0 VND</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:1px solid var(--border);padding-top:8px">
+        <span>Tổng cộng có VAT:</span>
+        <span class="money m-g" id="nl-total-vat">0 VND</span>
+      </div>
     </div>
     <hr class="div">
     <div class="g4">
@@ -1185,7 +1208,7 @@ function openModalHD(fromBG){
   openModal('modal-hd');
 }
 function clearHDForm(){
-  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-sdtPT','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayTT'].forEach(id=>{
+  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-sdtPT','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayTT','hd-ngayChot','hd-ngayHD'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   document.getElementById('hd-giatri').value='';
@@ -1236,6 +1259,8 @@ function editHD(id){
   }
   document.getElementById('hd-thuGomTiep').value=h.thuGomTiep||'';
   document.getElementById('hd-ghichuTG').value=h.ghichuTG||'';
+  document.getElementById('hd-ngayChot').value=h.ngayChot||'';
+  document.getElementById('hd-ngayHD').value=h.ngayHD||'';
   document.getElementById('hd-ttTT').value=h.ttTT||'chua';
   document.getElementById('hd-daThu').value=h.daThu?(h.daThu).toLocaleString('vi-VN'):'0';
   document.getElementById('hd-ngayTT').value=h.ngayTT||'';
@@ -1279,6 +1304,8 @@ function saveHD(){
     tanSuat:ts,tsCustom,
     thuGomTiep:document.getElementById('hd-thuGomTiep').value,
     ghichuTG:document.getElementById('hd-ghichuTG').value.trim(),
+    ngayChot:Number(document.getElementById('hd-ngayChot').value)||null,
+    ngayHD:Number(document.getElementById('hd-ngayHD').value)||null,
     ttTT:document.getElementById('hd-ttTT').value,
     daThu:parseMoney(document.getElementById('hd-daThu').value),
     ngayTT:document.getElementById('hd-ngayTT').value,
@@ -1505,7 +1532,8 @@ function renderBangKe(){
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding-top:12px;border-top:1px solid var(--border)">
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">${h.loai==='Khoán tháng'?'Giá khoán':(isKL?`Tổng ${h.dvt}`:'Tổng số lần')}</div>
           <div class="money" style="font-size:17px">${h.loai==='Khoán tháng'?fmtMoney(bk.tongTien):(isKL?`${bk.tongKL||0} ${h.dvt}`:`${bk.tongSL||0} lần`)}</div></div>
-        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Thành tiền</div><div class="money" style="font-size:17px">${fmtMoney(bk.tongTien)}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Thành tiền${bk.vat?` (đã VAT ${bk.vat}%)`:''}
+</div><div class="money" style="font-size:17px">${fmtMoney(bk.tongTien)}</div>${bk.vat?`<div style="font-size:11px;color:var(--orange)">Chưa VAT: ${fmtMoney(bk.tongTienChuaVAT||bk.tongTien)} · VAT: ${fmtMoney(bk.vatAmt||0)}</div>`:''}</div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Đã thu</div><div class="money m-g" style="font-size:17px">${fmtMoney(bk.daThu||0)}</div></div>
         <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">${(bk.daThu||0)>(bk.tongTien||0)?'Còn dư':'Còn nợ'}</div>
           <div class="money ${(bk.daThu||0)>(bk.tongTien||0)?'m-g':'m-r'}" style="font-size:17px">${fmtMoney(Math.abs((bk.tongTien||0)-(bk.daThu||0)))}</div>
@@ -1533,6 +1561,7 @@ function openNLFor(hdId,thang){
     document.getElementById('nl-dathu').value=ex.daThu?(ex.daThu).toLocaleString('vi-VN'):'0';
     document.getElementById('nl-ngayTT').value=ex.ngayTT||'';
     document.getElementById('nl-ghichu').value=ex.ghichu||'';
+    if(document.getElementById('nl-vat')&&ex.vat) document.getElementById('nl-vat').value=String(ex.vat);
     if(ex.rows&&ex.rows.length){nlRows=[...ex.rows];setNLMode('chitiet',document.getElementById('nl-tab-ct'));}
     else if(ex.tongKL||ex.tongSL){
       setNLMode('tong',document.getElementById('nl-tab-tg'));
@@ -1551,6 +1580,7 @@ function openModalNL(){
   document.getElementById('nl-thang').value=thisMonth();
   document.getElementById('nl-info').innerHTML='';
   document.getElementById('nl-ttTT').value='chua';
+  if(document.getElementById('nl-vat')) document.getElementById('nl-vat').value='0';
   document.getElementById('nl-dathu').value='0';
   document.getElementById('nl-ngayTT').value='';
   document.getElementById('nl-ghichu').value='';
@@ -1624,6 +1654,25 @@ function calcNLTotal(){
   document.getElementById('nl-total-disp').textContent=fmtMoney(total);
   document.getElementById('nl-tong-tien').value=total>0?total.toLocaleString('vi-VN'):'';
   document.getElementById('nl-summary').style.display=total>0?'block':'none';
+  // Default VAT from contract
+  if(nlCurHD && nlCurHD.vat){
+    const vatSel=document.getElementById('nl-vat');
+    if(vatSel) vatSel.value=String(nlCurHD.vat);
+  }
+  calcNLVAT();
+}
+function calcNLVAT(){
+  const baseEl=document.getElementById('nl-total-disp');
+  const vatSel=document.getElementById('nl-vat');
+  const vatAmtEl=document.getElementById('nl-vat-amt');
+  const totalVATEl=document.getElementById('nl-total-vat');
+  if(!baseEl||!vatSel) return;
+  const base=parseMoney(baseEl.textContent)||0;
+  const vat=Number(vatSel.value)||0;
+  const vatAmt=Math.round(base*vat/100);
+  const total=base+vatAmt;
+  if(vatAmtEl) vatAmtEl.textContent=vat>0?fmtMoney(vatAmt):'0 VND';
+  if(totalVATEl) totalVATEl.textContent=fmtMoney(total);
 }
 function saveNL(){
   const hdId=document.getElementById('nl-khach').value;
@@ -1642,10 +1691,13 @@ function saveNL(){
     if(isKL) tongKL=Number(document.getElementById('nl-tong-kl').value)||0;
     else tongSL=Number(document.getElementById('nl-tong-sl').value)||0;
   }
-  const tongTien=isKT?(h.giatri||0):(isKL?tongKL*(h.dongia||0):tongSL*(h.dongialan||0));
+  const tongTienChuaVAT=isKT?(h.giatri||0):(isKL?tongKL*(h.dongia||0):tongSL*(h.dongialan||0));
+  const nlVat=Number(document.getElementById('nl-vat')?.value||0);
+  const vatAmt=Math.round(tongTienChuaVAT*nlVat/100);
+  const tongTien=tongTienChuaVAT+vatAmt;
   const ex=BK.find(b=>b.hdId===hdId&&b.thang===thang);
   const obj={
-    id:ex?ex.id:uid(),hdId,thang,tongKL,tongSL,tongTien,rows,
+    id:ex?ex.id:uid(),hdId,thang,tongKL,tongSL,tongTienChuaVAT,vat:nlVat,vatAmt,tongTien,rows,
     loai:h.dgLoai||'khoi_luong',dvt:h.dvt||'',
     ttTT:document.getElementById('nl-ttTT').value,
     daThu:parseMoney(document.getElementById('nl-dathu').value),
@@ -1789,8 +1841,69 @@ function renderCongNo(){
 }
 
 // ===================== NHẮC VIỆC =====================
+// ===== NGÀY CHỐT BẢNG KÊ =====
+function toggleNhacSettings(){
+  const el=document.getElementById('nhac-settings');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+function saveNgayChot(){
+  const ngayChot=Number(document.getElementById('ngay-chot-bk').value)||25;
+  const ngayHD=Number(document.getElementById('ngay-xuat-hd').value)||5;
+  localStorage.setItem('ngay_chot_bk', ngayChot);
+  localStorage.setItem('ngay_xuat_hd', ngayHD);
+  renderNhac();
+  toast('✅ Đã lưu cài đặt ngày chốt');
+}
+function loadNgayChot(){
+  const nc=Number(localStorage.getItem('ngay_chot_bk')||25);
+  const nh=Number(localStorage.getItem('ngay_xuat_hd')||5);
+  const el1=document.getElementById('ngay-chot-bk');
+  const el2=document.getElementById('ngay-xuat-hd');
+  if(el1) el1.value=nc;
+  if(el2) el2.value=nh;
+  return {ngayChot:nc, ngayHD:nh};
+}
 function renderNhac(){
   const now=todayStr();const in30=addDays(now,30);const in60=addDays(now,60);
+  // Check per-contract chốt deadline (within 3 days)
+  const todayDate = new Date(now);
+  const thisYear = todayDate.getFullYear();
+  const thisMonthNum = todayDate.getMonth();
+  const dayOfMonth = todayDate.getDate();
+  // Find contracts with upcoming chốt deadline
+  const eligible = HD.filter(h=>['Đơn giá','Khoán tháng'].includes(h.loai)&&h.status==='active');
+  const sapChotList = eligible.filter(h=>{
+    const nc = h.ngayChot;
+    if(!nc) return false; // no deadline set
+    const chuaChot = !BK.find(b=>b.hdId===h.id&&b.thang===thisMonth());
+    if(!chuaChot) return false;
+    let chotD = new Date(thisYear, thisMonthNum, nc);
+    if(dayOfMonth > nc) chotD = new Date(thisYear, thisMonthNum+1, nc);
+    const d = Math.round((chotD - todayDate)/86400000);
+    h._daysToChot = d;
+    return d >= 0 && d <= 3;
+  }).sort((a,b)=>a._daysToChot-b._daysToChot);
+
+  const sapChotCard = document.getElementById('nv-sap-chot-card');
+  const sapChotDiv = document.getElementById('nv-sap-chot');
+  if(sapChotList.length > 0){
+    sapChotCard.style.display='block';
+    sapChotDiv.innerHTML = sapChotList.map(h=>{
+      const d = h._daysToChot;
+      const urgency = d===0?'🔴 Hôm nay':d===1?'🟠 Còn 1 ngày':d===2?'🟡 Còn 2 ngày':'🟢 Còn 3 ngày';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(196,122,26,.2)">
+        <div>
+          <div style="font-weight:700">${h.ten} ${loaiBadge(h.loai)}</div>
+          <div style="font-size:12px;color:var(--orange);margin-top:2px">${urgency} — Hạn chốt: <strong>ngày ${h.ngayChot}</strong> tháng này</div>
+          <div style="font-size:11px;color:var(--muted)">${h.loai==='Khoán tháng'?fmtMoney(h.giatri)+'/tháng':(h.dgLoai!=='so_lan'?`${h.dvt} × ${fmtMoney(h.dongia)}`:`${fmtMoney(h.dongialan)}/lần`)}</div>
+        </div>
+        <button class="btn bxs bo no-print" onclick="openNLFor('${h.id}')">+ Chốt ngay</button>
+      </div>`;
+    }).join('');
+  } else {
+    sapChotCard.style.display='none';
+  }
+  // Update dashboard badge if sắp chốt
   // Thu gom
   const tg=HD.filter(h=>h.status==='active'&&h.thuGomTiep&&h.thuGomTiep>=now&&h.thuGomTiep<=in30).sort((a,b)=>a.thuGomTiep>b.thuGomTiep?1:-1);
   document.getElementById('nv-thugom').innerHTML=tg.length?tg.map(h=>{
@@ -1842,11 +1955,23 @@ function renderNhac(){
     </div>`).join(''):'<div class="empty" style="padding:20px"><div class="ei" style="font-size:26px">✅</div>Tất cả đã chốt</div>';
 
   // Nhắc xuất hóa đơn: các bảng kê đã chốt trong tháng, chưa đánh dấu xuất hóa đơn
-  const hd_remind=BK.filter(b=>b.thang===thisMonth()&&!b.xuatHD);
+  // Chỉ nhắc khi đã qua ngày chốt
+  const hd_remind=BK.filter(b=>{
+    if(b.xuatHD) return false;
+    const tm = thisMonth();
+    // current month or previous month BK not yet invoiced
+    if(b.thang!==tm) return false;
+    const h=HD.find(d=>d.id===b.hdId);
+    const ngayHDContract = h?.ngayHD || null;
+    // Show reminder after chốt date or if no date set, show always
+    if(!ngayHDContract) return true;
+    return dayOfMonth >= (h?.ngayChot||1);
+  });
   document.getElementById('nv-hoadon').innerHTML=hd_remind.length?hd_remind.map(b=>{
     const h=HD.find(d=>d.id===b.hdId);
+    const hdDate = h?.ngayHD ? `Xuất HĐ trước ngày ${h.ngayHD}` : '';
     return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div><strong>${h?h.ten:'—'}</strong><div style="font-size:11px;color:var(--muted);margin-top:2px">Tháng ${b.thang.split('-').reverse().join('/')} · ${fmtMoney(b.tongTien)}</div></div>
+      <div><strong>${h?h.ten:'—'}</strong><div style="font-size:11px;color:var(--muted);margin-top:2px">Tháng ${b.thang.split('-').reverse().join('/')} · ${fmtMoney(b.tongTien)}${hdDate?` · <span style="color:var(--orange)">${hdDate}</span>`:''}</div></div>
       <button class="btn bxs bg no-print" onclick="markXuatHD('${b.id}')" style="color:var(--accent)">✅ Đã xuất HĐ</button>
     </div>`;}).join('')+'<div style="font-size:11px;color:var(--muted);padding:8px 0">Đánh dấu khi đã xuất hóa đơn cho khách</div>'
   :'<div class="empty" style="padding:20px"><div class="ei" style="font-size:26px">✅</div>Không có hóa đơn cần xuất</div>';
@@ -2145,8 +2270,19 @@ function renderDashboard(){
 function updateBadges(){
   const now=todayStr();
   const cn=HD.filter(h=>h.status==='active'&&h.loai!=='Đơn giá'&&h.ttTT!=='da').length+BK.filter(b=>b.ttTT!=='da').length;
+  const todayD=new Date(now); const domB=todayD.getDate();
+  const thisMB=todayD.getMonth(); const thisYB=todayD.getFullYear();
+  const sapChot=HD.filter(h=>{
+    if(!['Đơn giá','Khoán tháng'].includes(h.loai)||h.status!=='active') return false;
+    if(!h.ngayChot) return false;
+    if(BK.find(b=>b.hdId===h.id&&b.thang===thisMonth())) return false;
+    let cd=new Date(thisYB,thisMB,h.ngayChot); if(domB>h.ngayChot) cd=new Date(thisYB,thisMB+1,h.ngayChot);
+    const d=Math.round((cd-todayD)/86400000);
+    return d>=0&&d<=3;
+  }).length;
   const nv=HD.filter(h=>h.status==='active'&&h.thuGomTiep&&h.thuGomTiep>=now&&h.thuGomTiep<=addDays(now,7)).length
-    +HD.filter(h=>h.status==='active'&&!h.noRenew&&h.ngaykt&&diffDays(h.ngaykt,now)<=30&&h.ngaykt>=now).length;
+    +HD.filter(h=>h.status==='active'&&!h.noRenew&&h.ngaykt&&diffDays(h.ngaykt,now)<=30&&h.ngaykt>=now).length
+    +sapChot;
   ['nb-cn','bn-cn'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=cn;el.style.display=cn?'':'none';}});
   ['nb-nv','bn-nv'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=nv;el.style.display=nv?'':'none';}});
 }
@@ -2188,6 +2324,7 @@ function renderAll(){
 
 // ===================== INIT =====================
 loadData();
+loadNgayChot();
 renderDashboard();
 updateBadges();
 </script>
@@ -2372,16 +2509,6 @@ async function _syncAllUp() {
 window.addEventListener('load', ()=>{ syncDown(); });
 
 
-// ===================== CHUYỂN ĐỊA CHỈ MỚI =====================
-function chuyenDiaChi(){
-  const dc = document.getElementById('hd-diachi1').value.trim();
-  if(!dc){ toast('Nhập địa chỉ trước rồi mới chuyển','error'); return; }
-  // Open tracuudiachi with address pre-filled in search
-  const url = `https://tracuudiachi.io.vn/?q=${encodeURIComponent(dc)}`;
-  window.open(url, '_blank');
-  toast('🔄 Đã mở trang tra cứu địa chỉ mới — copy kết quả rồi dán lại vào ô địa chỉ nhé!');
-}
-
 // ===================== TRA CỨU MST =====================
 async function traCuuMST(){
   const mst = document.getElementById('hd-mst').value.trim();
@@ -2389,33 +2516,47 @@ async function traCuuMST(){
   const status = document.getElementById('mst-status');
   status.textContent = '⏳ Đang tra cứu...';
   status.style.color = 'var(--muted)';
-  try {
-    // Try esgoo.net API (free, no key needed)
-    const res = await fetch(`https://esgoo.net/api-mst/${mst}.htm`);
-    const data = await res.json();
-    if(data.error === 0 && data.data) {
-      const d = data.data;
-      // Fill fields
-      if(d.ten) document.getElementById('hd-ten').value = d.ten;
-      if(d.dc)  document.getElementById('hd-diachi1').value = d.dc;
-      // Try to fill cty name same as ten
-      status.textContent = `✅ Tìm thấy: ${d.ten || ''}`;
-      status.style.color = 'var(--accent)';
-      // Show extra info
-      let extra = [];
-      if(d.daidien) extra.push('Đại diện: ' + d.daidien);
-      if(d.tinhtrang) extra.push(d.tinhtrang);
-      if(extra.length) status.textContent += ' · ' + extra.join(' · ');
-      toast('✅ Đã điền thông tin từ MST');
-    } else {
-      status.textContent = '❌ Không tìm thấy MST này';
-      status.style.color = 'var(--danger)';
+
+  // Try up to 3 times with delay to handle CORS preflight cache
+  for(let attempt = 1; attempt <= 3; attempt++){
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(`https://esgoo.net/api-mst/${mst}.htm`, {
+        signal: controller.signal,
+        cache: 'no-cache'
+      });
+      clearTimeout(timeout);
+      const data = await res.json();
+      if(data.error === 0 && data.data) {
+        const d = data.data;
+        if(d.ten) document.getElementById('hd-ten').value = d.ten;
+        if(d.dc)  document.getElementById('hd-diachi1').value = d.dc;
+        status.textContent = `✅ ${d.ten || ''}`;
+        status.style.color = 'var(--accent)';
+        let extra = [];
+        if(d.daidien) extra.push('ĐD: ' + d.daidien);
+        if(d.tinhtrang) extra.push(d.tinhtrang);
+        if(extra.length) status.textContent += ' · ' + extra.join(' · ');
+        toast('✅ Đã điền thông tin từ MST');
+        return; // success, stop retrying
+      } else {
+        // MST not found - no point retrying
+        status.textContent = '❌ Không tìm thấy MST này';
+        status.style.color = 'var(--danger)';
+        return;
+      }
+    } catch(e) {
+      if(attempt < 3){
+        status.textContent = `⏳ Đang thử lại (${attempt}/3)...`;
+        await new Promise(r => setTimeout(r, 1000 * attempt)); // wait 1s, 2s
+      } else {
+        // All retries failed - open fallback
+        status.textContent = '⚠️ Không kết nối được — mở trang tra cứu...';
+        status.style.color = 'var(--warn)';
+        window.open(`https://thuvienphapluat.vn/ma-so-thue/${mst}`, '_blank');
+      }
     }
-  } catch(e) {
-    // Fallback: open thuvienphapluat in new tab
-    status.textContent = '⚠️ Không tra được tự động — đang mở trang tra cứu...';
-    status.style.color = 'var(--warn)';
-    window.open(`https://thuvienphapluat.vn/ma-so-thue/${mst}`, '_blank');
   }
 }
 
