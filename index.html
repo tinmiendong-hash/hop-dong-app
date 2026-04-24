@@ -1048,7 +1048,11 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+
+
 <script>
+
 // ===================== STATE =====================
 let HD=[], BK=[], BAOGIA=[], TRASH=[];
 let editHDId=null, huyCTX=null, taikyCTX=null, ttCTX=null, bgEditId=null, kghCTX=null;
@@ -1713,8 +1717,8 @@ function renderLichSu(){
     </tr>`;
   }).join('');
 }
-</script>
-<script>
+
+
 // ===================== BẢNG KÊ =====================
 function initBKMonths(){
   const sel=document.getElementById('bk-month');
@@ -2767,8 +2771,7 @@ loadData();
 loadNgayChot();
 renderDashboard();
 updateBadges();
-</script>
-<script>
+// PASSWORD BLOCK
 (function(){
   // Hash of password: Donttry1@@
   const HASH = '8a6172f9b3c4e5d2a1f8b7c6e5d4a3f2b1c8e7d6a5f4b3c2e1d8a7f6b5c4e3d2';
@@ -3023,7 +3026,7 @@ async function traCuuMST(){
 if(window._syncOnReady){
   syncDown();
 }
-</script>
 
+</script>
 </body>
 </html>
