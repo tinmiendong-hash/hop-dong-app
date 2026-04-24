@@ -730,6 +730,31 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
     <div class="g2" style="margin-bottom:4px">
       <div class="fg gf"><label>Ghi chú lịch thu gom</label><input id="hd-ghichuTG" placeholder="VD: Liên hệ trước 3 ngày, tháng 6 & 12..."></div>
     </div>
+    <!-- Chốt bảng kê: chỉ hiện cho Khoán tháng và Đơn giá -->
+    <div id="hd-bangke-wrap" style="display:none;margin-top:4px">
+      <div class="g3">
+        <div class="fg">
+          <label>Ngày chốt bảng kê hàng tháng</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;color:var(--muted)">Ngày</span>
+            <input type="number" id="hd-ngayChot" min="1" max="28" placeholder="VD: 25"
+              style="width:75px;padding:8px 10px;border:1px solid var(--border2);border-radius:6px;font-size:14px;font-weight:600;text-align:center">
+            <span style="font-size:13px;color:var(--muted)">hàng tháng</span>
+          </div>
+          <span class="hint">Để trống nếu không cần chốt bảng kê</span>
+        </div>
+        <div class="fg">
+          <label>Ngày xuất hóa đơn hàng tháng</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;color:var(--muted)">Ngày</span>
+            <input type="number" id="hd-ngayHD" min="1" max="28" placeholder="VD: 5"
+              style="width:75px;padding:8px 10px;border:1px solid var(--border2);border-radius:6px;font-size:14px;font-weight:600;text-align:center">
+            <span style="font-size:13px;color:var(--muted)">tháng sau</span>
+          </div>
+          <span class="hint">Nhắc xuất HĐ sau khi chốt</span>
+        </div>
+      </div>
+    </div>
     <!-- Chuyển đổi loại HĐ (chỉ hiện khi edit khoán tháng) -->
     <div id="hd-convert-wrap" style="display:none;margin-top:8px">
       <div class="alert ai">💡 <span>Bạn có thể <strong>chuyển đổi sang Khoán năm</strong> nếu khách muốn ký dài hạn hơn. <button class="btn bg bxs" style="margin-left:8px" onclick="convertToKhoanNam()">Chuyển → Khoán năm</button></span></div>
@@ -1129,6 +1154,9 @@ function setHDLoai(l,el){
   document.getElementById('hd-tt-wrap').style.display=isKhoan?'grid':'none';
   document.getElementById('hd-giatri-unit').textContent=l==='Khoán tháng'?'tháng':'năm';
   document.getElementById('hd-convert-wrap').style.display=(editHDId&&l==='Khoán tháng')?'block':'none';
+  // Chỉ hiện ngày chốt bảng kê cho Khoán tháng và Đơn giá
+  const showBK = (l==='Khoán tháng'||l==='Đơn giá');
+  document.getElementById('hd-bangke-wrap').style.display=showBK?'block':'none';
 }
 function setDGType(t,el){
   dgType=t;
@@ -1216,9 +1244,11 @@ function openModalHD(fromBG){
   openModal('modal-hd');
 }
 function clearHDForm(){
-  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-sdtPT','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayTT','hd-ngayChot','hd-ngayHD'].forEach(id=>{
+  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-sdtPT','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayTT'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
+  const nc=document.getElementById('hd-ngayChot');if(nc)nc.value='';
+  const nh=document.getElementById('hd-ngayHD');if(nh)nh.value='';
   document.getElementById('hd-giatri').value='';
   if(document.getElementById('hd-vat')) document.getElementById('hd-vat').value='8';
   if(document.getElementById('hd-giatri-vat')) document.getElementById('hd-giatri-vat').value='';
@@ -1312,8 +1342,8 @@ function saveHD(){
     tanSuat:ts,tsCustom,
     thuGomTiep:document.getElementById('hd-thuGomTiep').value,
     ghichuTG:document.getElementById('hd-ghichuTG').value.trim(),
-    ngayChot:Number(document.getElementById('hd-ngayChot').value)||null,
-    ngayHD:Number(document.getElementById('hd-ngayHD').value)||null,
+    ngayChot:Number(document.getElementById('hd-ngayChot')?.value)||null,
+    ngayHD:Number(document.getElementById('hd-ngayHD')?.value)||null,
     ttTT:document.getElementById('hd-ttTT').value,
     daThu:parseMoney(document.getElementById('hd-daThu').value),
     ngayTT:document.getElementById('hd-ngayTT').value,
