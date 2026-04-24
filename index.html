@@ -406,6 +406,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
     <div class="ni" data-page="nhac" onclick="navTo(this)"><span class="ic">🔔</span><span>Nhắc việc</span><span class="nb" id="nb-nv">0</span></div>
     <div class="nav-sec">Tài liệu</div>
     <div class="ni" data-page="baogiaList" onclick="navTo(this)"><span class="ic">📝</span><span>Báo giá</span></div>
+    <div class="ni" data-page="trash" onclick="navTo(this)"><span class="ic">🗑️</span><span>Thùng rác</span></div>
   </div>
 </nav>
 
@@ -611,9 +612,22 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
   <button class="drawer-item" data-page="nhac" onclick="drawerNav(this)"><span class="dic">🔔</span>Nhắc việc <span class="drawer-badge" id="bn-nv" style="display:none">0</span></button>
   <div class="nav-sec">Tài liệu</div>
   <button class="drawer-item" data-page="baogiaList" onclick="drawerNav(this)"><span class="dic">📝</span>Báo giá</button>
+  <button class="drawer-item" data-page="trash" onclick="drawerNav(this)"><span class="dic">🗑️</span>Thùng rác</button>
 </div>
 
 </div>
+<!-- ========== THÙNG RÁC ========== -->
+<div id="page-trash" class="page">
+  <div class="ph">
+    <div class="pt">Thùng rác <small>Các mục đã xóa — có thể khôi phục</small></div>
+    <button class="btn br bs no-print" onclick="emptyTrash()">🗑️ Xóa tất cả vĩnh viễn</button>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="ct">Hợp đồng & Báo giá đã xóa</div></div>
+    <div id="trash-list"></div>
+  </div>
+</div>
+
 <!-- ===== MODAL: HỢP ĐỒNG ===== -->
 <div class="ov" id="modal-hd">
 <div class="modal modal-lg">
@@ -1035,7 +1049,7 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 <div class="toast" id="toast"></div>
 <script>
 // ===================== STATE =====================
-let HD=[], BK=[], BAOGIA=[];
+let HD=[], BK=[], BAOGIA=[], TRASH=[];
 let editHDId=null, huyCTX=null, taikyCTX=null, ttCTX=null, bgEditId=null, kghCTX=null;
 let hdLoai='Khoán năm', dgType='khoi_luong', nlMode='chitiet', nlRows=[], nlCurHD=null;
 
@@ -1078,12 +1092,14 @@ function loadData(){
       if(!BK.length && oldBK.length) BK=oldBK;
     }
     BAOGIA=JSON.parse(localStorage.getItem('baogia_v3')||'[]');
+    TRASH=JSON.parse(localStorage.getItem('trash_v3')||'[]');
   } catch(e){ HD=[];BK=[];BAOGIA=[];console.error(e); }
 }
 function persist(){
   localStorage.setItem('hd_v3',JSON.stringify(HD));
   localStorage.setItem('bk_v3',JSON.stringify(BK));
   localStorage.setItem('baogia_v3',JSON.stringify(BAOGIA));
+  localStorage.setItem('trash_v3',JSON.stringify(TRASH));
 }
 
 // ===================== UTILS =====================
@@ -1175,6 +1191,7 @@ function navTo(el){
   else if(p==='congno') renderCongNo();
   else if(p==='nhac') renderNhac();
   else if(p==='baogiaList') renderBaoGiaList();
+  else if(p==='trash') renderTrash();
 }
 
 // ===================== HĐ LOẠI & FORM =====================
@@ -1301,7 +1318,7 @@ function openModalHD(fromBG){
   openModal('modal-hd');
 }
 function clearHDForm(){
-  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-sdtPT','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayTT'].forEach(id=>{
+  ['hd-ten','hd-mst','hd-sdt','hd-email','hd-diachi1','hd-diachi2','hd-phuTrach','hd-sdtPT','hd-ghichu','hd-soHD','hd-ghichuTG','hd-ghichuTT','hd-ngaykt','hd-thuGomTiep','hd-ngayHanTT'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   const nc=document.getElementById('hd-ngayChot');if(nc)nc.value='';
@@ -1368,7 +1385,7 @@ function editHD(id){
   document.getElementById('hd-ttTT').value=h.ttTT||'chua';
   onPhuongThucChange();
   document.getElementById('hd-daThu').value=h.daThu?(h.daThu).toLocaleString('vi-VN'):'0';
-  document.getElementById('hd-ngayTT').value=h.ngayTT||'';
+  if(document.getElementById('hd-ngayHanTT')) document.getElementById('hd-ngayHanTT').value=h.ngayHanTT||h.ngayTT||'';
   document.getElementById('hd-ghichuTT').value=h.ghichuTT||'';
   if(h.loai==='Đơn giá'){
     const dgTabs=document.querySelectorAll('#dg-type-tabs .ttab');
@@ -1417,7 +1434,7 @@ function saveHD(){
     tamUng:parseMoney(document.getElementById('hd-tamUng').value)||0,
     ttTT:document.getElementById('hd-ttTT').value,
     daThu:parseMoney(document.getElementById('hd-daThu').value),
-    ngayTT:document.getElementById('hd-ngayTT').value,
+    ngayTT:document.getElementById('hd-ngayHanTT')?.value||'',
     ghichuTT:document.getElementById('hd-ghichuTT').value.trim(),
     dgLoai:dgType,
     dvt:document.getElementById('hd-dvt').value,
@@ -1558,11 +1575,15 @@ function renderHD(){
   }).join('');
 }
 function delHD(id){
-  if(!confirm('Xóa hợp đồng này?'))return;
+  if(!confirm('Chuyển hợp đồng này vào thùng rác?'))return;
+  const h=HD.find(x=>x.id===id); if(!h) return;
+  h._deletedAt=new Date().toISOString();
+  h._deletedFrom='hd';
+  TRASH.push(h);
   HD=HD.filter(x=>x.id!==id);
-  localStorage.setItem('hd_v3',JSON.stringify(HD));
+  persist();
   sbDelete('hop_dong',id).then(()=>showSyncStatus('✅ Đã xóa'));
-  renderHD();toast('Đã xóa');
+  renderHD();toast('🗑️ Đã chuyển vào thùng rác');
 }
 
 // ===================== LỊCH SỬ HĐ =====================
@@ -2358,11 +2379,15 @@ function renderBaoGiaList(){
   </tr>`).join('');
 }
 function delBG(id){
-  if(!confirm('Xóa báo giá này?'))return;
+  if(!confirm('Chuyển báo giá này vào thùng rác?'))return;
+  const g=BAOGIA.find(x=>x.id===id); if(!g) return;
+  g._deletedAt=new Date().toISOString();
+  g._deletedFrom='bg';
+  TRASH.push(g);
   BAOGIA=BAOGIA.filter(x=>x.id!==id);
-  localStorage.setItem('baogia_v3',JSON.stringify(BAOGIA));
+  persist();
   sbDelete('bao_gia',id).then(()=>showSyncStatus('✅ Đã xóa'));
-  renderBaoGiaList();toast('Đã xóa');
+  renderBaoGiaList();toast('🗑️ Đã chuyển vào thùng rác');
 }
 
 // ===================== DASHBOARD =====================
@@ -2477,6 +2502,70 @@ function toast(msg,type='success'){
 }
 
 // ===================== RENDER ALL =====================
+function renderTrash(){
+  const list = document.getElementById('trash-list');
+  if(!list) return;
+  if(!TRASH.length){
+    list.innerHTML='<div class="empty"><div class="ei">🗑️</div>Thùng rác trống</div>';
+    return;
+  }
+  list.innerHTML = [...TRASH].reverse().map(item=>{
+    const isHD = item._deletedFrom==='hd';
+    const deletedDate = item._deletedAt ? new Date(item._deletedAt).toLocaleDateString('vi-VN') : '—';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">${isHD?'📋':'📝'}</span>
+          <strong>${item.ten||item.ten||'—'}</strong>
+          ${isHD?loaiBadge(item.loai):'<span class="badge b-p">Báo giá</span>'}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">
+          ${isHD?`${item.soHD||''} · ${fmtDate(item.ngaybd)} → ${fmtDate(item.ngaykt)}`:`Số BG: ${item.so||'—'} · ${fmtDate(item.ngay)}`}
+          · Đã xóa: ${deletedDate}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn bxs bp no-print" onclick="restoreItem('${item.id}')">↩️ Khôi phục</button>
+        <button class="btn bxs br no-print" onclick="deleteForever('${item.id}')">✕ Xóa vĩnh viễn</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function restoreItem(id){
+  const idx = TRASH.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const item = TRASH[idx];
+  TRASH.splice(idx,1);
+  if(item._deletedFrom==='hd') HD.push(item);
+  else if(item._deletedFrom==='bg') BAOGIA.push(item);
+  persist();
+  renderTrash();
+  toast('↩️ Đã khôi phục');
+}
+function deleteForever(id){
+  if(!confirm('Xóa vĩnh viễn? Không thể khôi phục!')) return;
+  const item = TRASH.find(x=>x.id===id);
+  TRASH = TRASH.filter(x=>x.id!==id);
+  persist();
+  if(item) {
+    const tbl = item._deletedFrom==='hd'?'hop_dong':'bao_gia';
+    sbDelete(tbl, id);
+  }
+  renderTrash();
+  toast('🗑️ Đã xóa vĩnh viễn');
+}
+function emptyTrash(){
+  if(!TRASH.length){toast('Thùng rác đã trống');return;}
+  if(!confirm(`Xóa vĩnh viễn ${TRASH.length} mục? Không thể khôi phục!`)) return;
+  TRASH.forEach(item=>{
+    const tbl = item._deletedFrom==='hd'?'hop_dong':'bao_gia';
+    sbDelete(tbl, item.id);
+  });
+  TRASH=[];
+  persist();
+  renderTrash();
+  toast('🗑️ Đã dọn sạch thùng rác');
+}
 function renderAll(){
   renderDashboard();
   const active=document.querySelector('.ni.active');
@@ -2557,7 +2646,7 @@ updateBadges();
 
 // ===== DRAWER MOBILE NAV =====
 const PAGE_NAMES = {
-  dashboard:'📊 Dashboard', hdList:'📋 Hợp đồng',
+  dashboard:'📊 Dashboard', hdList:'📋 Hợp đồng', trash:'🗑️ Thùng rác',
   lichsu:'🗂️ Lịch sử HĐ', bangke:'🧾 Bảng kê',
   congno:'💰 Công nợ', nhac:'🔔 Nhắc việc',
   baogiaList:'📝 Báo giá'
