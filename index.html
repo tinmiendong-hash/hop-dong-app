@@ -1142,6 +1142,7 @@ function loadData(){
     const oldDG=JSON.parse(localStorage.getItem('thu_gom_dg')||'[]');
     const oldBK=JSON.parse(localStorage.getItem('thu_gom_bk')||'[]');
     const newHD=JSON.parse(localStorage.getItem('hd_v3')||'null');
+    if(newHD && !Array.isArray(newHD)) { HD=[]; BK=[]; BAOGIA=[]; TRASH=[]; return; } // safety check
     if(!newHD && (oldKH.length||oldDG.length)){
       // Migrate
       const migrated=[];
@@ -1168,12 +1169,16 @@ function loadData(){
       persist();
       toast('✅ Đã chuyển dữ liệu cũ sang phiên bản mới','success');
     } else {
-      HD=JSON.parse(localStorage.getItem('hd_v3')||'[]');
-      BK=JSON.parse(localStorage.getItem('bk_v3')||'[]');
+      const _hd=JSON.parse(localStorage.getItem('hd_v3')||'[]');
+      HD=Array.isArray(_hd)?_hd:[];
+      const _bk=JSON.parse(localStorage.getItem('bk_v3')||'[]');
+      BK=Array.isArray(_bk)?_bk:[];
       if(!BK.length && oldBK.length) BK=oldBK;
     }
-    BAOGIA=JSON.parse(localStorage.getItem('baogia_v3')||'[]');
-    TRASH=JSON.parse(localStorage.getItem('trash_v3')||'[]');
+    const _bg=JSON.parse(localStorage.getItem('baogia_v3')||'[]');
+    BAOGIA=Array.isArray(_bg)?_bg:[];
+    const _tr=JSON.parse(localStorage.getItem('trash_v3')||'[]');
+    TRASH=Array.isArray(_tr)?_tr:[];
   } catch(e){ HD=[];BK=[];BAOGIA=[];console.error(e); }
 }
 function persist(){
@@ -2641,6 +2646,9 @@ function delBG(id){
 
 // ===================== DASHBOARD =====================
 function renderDashboard(){
+  if(!Array.isArray(HD)) HD=[];
+  if(!Array.isArray(BK)) BK=[];
+  if(!Array.isArray(BAOGIA)) BAOGIA=[];
   document.getElementById('dash-date').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
   const now=todayStr();const in14=addDays(now,14);
   const now_d=now; const in7b=addDays(now,7);
