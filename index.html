@@ -1125,45 +1125,52 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
 
 <!-- ===== MODAL: XUẤT HỢP ĐỒNG WORD ===== -->
 <div class="ov" id="modal-xuat-hd">
-<div class="modal modal-lg">
+<div class="modal modal-xl">
   <div class="mh">
-    <div class="mt">📄 Xuất Hợp đồng Word</div>
+    <div class="mt">📄 Soạn & Xuất Hợp đồng Word</div>
     <button class="cx" onclick="closeModal('modal-xuat-hd')">✕</button>
   </div>
   <div class="mb">
-    <div id="xuat-hd-info" style="margin-bottom:14px;padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"></div>
-    <div class="sl">Thông tin điền vào hợp đồng</div>
-    <div class="g3" style="margin-bottom:12px">
+    <div class="sl">Thông tin hợp đồng</div>
+    <div class="g4" style="margin-bottom:12px">
+      <div class="fg"><label>Số hợp đồng <span class="req">*</span></label><input id="xhd-soHD" placeholder="001/2026/HĐ-MĐ"></div>
       <div class="fg"><label>Ngày ký</label><input type="number" id="xhd-ngay" min="1" max="31" placeholder="25"></div>
       <div class="fg"><label>Tháng ký</label><input type="number" id="xhd-thang" min="1" max="12" placeholder="04"></div>
       <div class="fg"><label>Năm ký</label><input type="number" id="xhd-nam" placeholder="2026"></div>
     </div>
+    <div class="sl">Thông tin Bên B</div>
     <div class="g2" style="margin-bottom:12px">
-      <div class="fg"><label>Địa chỉ thu gom (nếu khác địa chỉ công ty)</label><input id="xhd-diachi-tg" placeholder="Để trống = dùng địa chỉ công ty"></div>
-      <div class="fg"><label>Loại chất thải (mô tả ngắn)</label><input id="xhd-loai-ct" placeholder="VD: nguy hại"></div>
+      <div class="fg"><label>Tên công ty / cá nhân <span class="req">*</span></label><input id="xhd-ten" placeholder="CÔNG TY TNHH ABC"></div>
+      <div class="fg"><label>Mã số thuế</label><input id="xhd-mst" placeholder="0123456789"></div>
+      <div class="fg"><label>Giới tính người đại diện</label>
+        <select id="xhd-gioitinh">
+          <option value="Ông">Ông</option>
+          <option value="Bà">Bà</option>
+        </select>
+      </div>
+      <div class="fg"><label>Tên người đại diện</label><input id="xhd-daidien" placeholder="Nguyễn Văn A"></div>
+      <div class="fg"><label>Chức vụ</label><input id="xhd-chucvu" placeholder="Giám đốc"></div>
+      <div class="fg"><label>Địa chỉ</label><input id="xhd-diachi" placeholder="123 Đường ABC, TP.HCM"></div>
+      <div class="fg"><label>Điện thoại</label><input id="xhd-dienthoai" placeholder="0901234567"></div>
+      <div class="fg"><label>Email</label><input id="xhd-email" placeholder="abc@email.com"></div>
+      <div class="fg"><label>Mã số HKD <span class="hint">(bỏ trống = xóa dòng)</span></label><input id="xhd-hkd" placeholder="Để trống nếu không có"></div>
+      <div class="fg"><label>Địa chỉ thu gom (nếu khác)</label><input id="xhd-diachi-tg" placeholder="Để trống = dùng địa chỉ trên"></div>
     </div>
-    <div class="sl">Danh mục chất thải (Điều 2)</div>
-    <div id="xhd-chatthailist"></div>
-    <button class="btn bou bs no-print" onclick="addXHDChatThai()" style="margin-top:8px">+ Thêm chất thải</button>
-    <hr class="div">
-    <div class="sl">Điều khoản thanh toán</div>
+    <div class="sl">Nội dung thu gom (Điều 1)</div>
     <div class="g2" style="margin-bottom:12px">
-      <div class="fg">
-        <label>Đặt cọc đợt 1 (VND)</label>
-        <input id="xhd-datcoc" type="text" placeholder="VD: 5.000.000" oninput="fmtInput(this)">
-      </div>
-      <div class="fg">
-        <label>Công nợ (số ngày)</label>
-        <input id="xhd-congno" type="number" placeholder="30">
-      </div>
-      <div class="fg">
-        <label>Công nợ bằng chữ</label>
-        <input id="xhd-congno-chu" placeholder="VD: ba mươi">
-      </div>
-      <div class="fg">
-        <label>Phí vận chuyển phát sinh/chuyến</label>
-        <input id="xhd-phi-vc" type="text" placeholder="VD: 500.000" oninput="fmtInput(this)">
-      </div>
+      <div class="fg"><label>Loại chất thải (mô tả)</label><input id="xhd-loai-ct" placeholder="VD: nguy hại"></div>
+      <div class="fg"><label>Tần suất thu gom</label><input id="xhd-tanSuat" placeholder="VD: 01 lần/năm"></div>
+    </div>
+    <div class="sl">Danh mục chất thải — Điều 2</div>
+    <div id="xhd-chatthailist"></div>
+    <button class="btn bou bs no-print" onclick="addXHDChatThai()" style="margin-top:8px">+ Thêm dòng chất thải</button>
+    <hr class="div">
+    <div class="sl">Điều khoản thanh toán — Điều 4</div>
+    <div class="g4" style="margin-bottom:12px">
+      <div class="fg"><label>Đặt cọc đợt 1 (VND)</label><input id="xhd-datcoc" type="text" placeholder="5.000.000" oninput="fmtInput(this)"></div>
+      <div class="fg"><label>Phí VC phát sinh/chuyến (VND)</label><input id="xhd-phi-vc" type="text" placeholder="500.000" oninput="fmtInput(this)"></div>
+      <div class="fg"><label>Công nợ (số ngày)</label><input id="xhd-congno" type="number" placeholder="30"></div>
+      <div class="fg"><label>Công nợ bằng chữ</label><input id="xhd-congno-chu" placeholder="ba mươi"></div>
     </div>
   </div>
   <div class="mf">
@@ -3119,42 +3126,48 @@ let xhdChatThais = [];
 function openXuatHD(id) {
   xuatHDId = id;
   const h = HD.find(x=>x.id===id); if(!h) return;
-  xhdChatThais = [];
-  // Pre-fill from contract data
-  const d = new Date(h.ngaybd||new Date());
+  xhdChatThais = [{ ma:'', ten:'', trangThai:'Rắn', dvt:'kg', khoi:'', ky:'năm', gia:'', donGiaPs:'', donGiaBd:'' }];
+  
+  // Pre-fill from contract
+  const d = new Date(h.ngaybd || new Date());
+  document.getElementById('xhd-soHD').value = h.soHD || '';
   document.getElementById('xhd-ngay').value = d.getDate();
   document.getElementById('xhd-thang').value = d.getMonth()+1;
   document.getElementById('xhd-nam').value = d.getFullYear();
-  document.getElementById('xhd-diachi-tg').value = h.diachi2||'';
+  document.getElementById('xhd-ten').value = h.ten || '';
+  document.getElementById('xhd-mst').value = h.mst || '';
+  document.getElementById('xhd-gioitinh').value = 'Ông';
+  document.getElementById('xhd-daidien').value = h.phuTrach || '';
+  document.getElementById('xhd-chucvu').value = '';
+  document.getElementById('xhd-diachi').value = h.diachi1 || '';
+  document.getElementById('xhd-dienthoai').value = h.sdt || '';
+  document.getElementById('xhd-email').value = h.email || '';
+  document.getElementById('xhd-hkd').value = '';
+  document.getElementById('xhd-diachi-tg').value = h.diachi2 || '';
   document.getElementById('xhd-loai-ct').value = '';
-  document.getElementById('xhd-datcoc').value = h.giatri?(h.giatri).toLocaleString('vi-VN'):'';
-  document.getElementById('xhd-congno').value = h.hanTT||'';
-  document.getElementById('xhd-congno-chu').value = '';
+  document.getElementById('xhd-tanSuat').value = h.tanSuat || '';
+  document.getElementById('xhd-datcoc').value = h.giatri ? h.giatri.toLocaleString('vi-VN') : '';
   document.getElementById('xhd-phi-vc').value = '';
-  // Info
-  document.getElementById('xuat-hd-info').innerHTML = 
-    `<strong>${h.ten}</strong> ${loaiBadge(h.loai)}<br>
-     ${h.soHD?'Số HĐ: '+h.soHD+' · ':''}MST: ${h.mst||'—'} · Địa chỉ: ${h.diachi1||'—'}`;
-  // Add 1 default chat thai row
-  addXHDChatThai();
+  document.getElementById('xhd-congno').value = h.hanTT || '';
+  document.getElementById('xhd-congno-chu').value = '';
   renderXHDChatThai();
   openModal('modal-xuat-hd');
 }
 
 function addXHDChatThai() {
-  xhdChatThais.push({ ma:'', ten:'', trangThai:'', dvt:'', khoi:'', ky:'năm', gia:'', donGiaPs:'', donGiaBd:'', phiBd:false });
+  xhdChatThais.push({ ma:'', ten:'', trangThai:'Rắn', dvt:'kg', khoi:'', ky:'năm', gia:'', donGiaPs:'', donGiaBd:'' });
   renderXHDChatThai();
 }
 
 function renderXHDChatThai() {
   const wrap = document.getElementById('xhd-chatthailist');
   wrap.innerHTML = xhdChatThais.map((ct,i) => `
-    <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+    <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <strong style="font-size:13px">Chất thải ${i+1}</strong>
-        ${xhdChatThais.length>1?`<button class="btn bxs bg" style="color:var(--danger)" onclick="xhdChatThais.splice(${i},1);renderXHDChatThai()">✕</button>`:''}
+        ${xhdChatThais.length>1?`<button class="btn bxs bg" style="color:var(--danger)" onclick="xhdChatThais.splice(${i},1);renderXHDChatThai()">✕ Xóa</button>`:''}
       </div>
-      <div class="g3" style="gap:8px">
+      <div class="g4" style="gap:8px">
         <div class="fg"><label>Mã chất thải</label><input value="${ct.ma}" placeholder="VD: 18 01 01" onchange="xhdChatThais[${i}].ma=this.value"></div>
         <div class="fg"><label>Tên chất thải</label><input value="${ct.ten}" placeholder="Tên chất thải" onchange="xhdChatThais[${i}].ten=this.value"></div>
         <div class="fg"><label>Trạng thái</label>
@@ -3172,64 +3185,75 @@ function renderXHDChatThai() {
             <option value="thùng" ${ct.dvt==='thùng'?'selected':''}>thùng</option>
           </select>
         </div>
-        <div class="fg"><label>Khối lượng khoán</label><input value="${ct.khoi}" placeholder="VD: 100" onchange="xhdChatThais[${i}].khoi=this.value"></div>
+        <div class="fg"><label>KL khoán/${ct.ky}</label><input value="${ct.khoi}" placeholder="VD: 100" onchange="xhdChatThais[${i}].khoi=this.value;renderXHDChatThai()"></div>
         <div class="fg"><label>Kỳ</label>
-          <select onchange="xhdChatThais[${i}].ky=this.value">
+          <select onchange="xhdChatThais[${i}].ky=this.value;renderXHDChatThai()">
             <option value="năm" ${ct.ky==='năm'?'selected':''}>năm</option>
             <option value="tháng" ${ct.ky==='tháng'?'selected':''}>tháng</option>
             <option value="quý" ${ct.ky==='quý'?'selected':''}>quý</option>
           </select>
         </div>
-        <div class="fg"><label>Giá khoán (VND)</label><input value="${ct.gia}" placeholder="VD: 5.000.000" onchange="xhdChatThais[${i}].gia=this.value"></div>
-        <div class="fg"><label>Đơn giá phát sinh (VND/kg)</label><input value="${ct.donGiaPs}" placeholder="VD: 50.000" onchange="xhdChatThais[${i}].donGiaPs=this.value"></div>
-        <div class="fg"><label>Đơn giá bóng đèn (VND/kg)</label><input value="${ct.donGiaBd}" placeholder="VD: 80.000" onchange="xhdChatThais[${i}].donGiaBd=this.value"></div>
+        <div class="fg"><label>Giá khoán (VND/${ct.ky})</label><input value="${ct.gia}" placeholder="5.000.000" onchange="xhdChatThais[${i}].gia=this.value"></div>
+        <div class="fg"><label>KL bóng đèn ≤ (tự tính)</label>
+          <input value="${ct.khoi ? (parseFloat(ct.khoi)/10).toFixed(1) : ''}" readonly style="background:var(--surface2);color:var(--muted)" placeholder="= KL/10">
+        </div>
+        <div class="fg"><label>ĐG phát sinh (VND/kg)</label><input value="${ct.donGiaPs}" placeholder="50.000" onchange="xhdChatThais[${i}].donGiaPs=this.value"></div>
+        <div class="fg"><label>ĐG bóng đèn phát sinh (VND/kg)</label><input value="${ct.donGiaBd}" placeholder="80.000" onchange="xhdChatThais[${i}].donGiaBd=this.value"></div>
       </div>
     </div>
   `).join('');
 }
 
 function xuatHopDong() {
-  const h = HD.find(x=>x.id===xuatHDId); if(!h) return;
+  const soHD = document.getElementById('xhd-soHD').value.trim();
+  const ten = document.getElementById('xhd-ten').value.trim();
+  if(!ten) { toast('Vui lòng nhập tên công ty/khách hàng', 'error'); return; }
+  
   const ngay = document.getElementById('xhd-ngay').value;
   const thang = document.getElementById('xhd-thang').value;
   const nam = document.getElementById('xhd-nam').value;
-  const diaChiTG = document.getElementById('xhd-diachi-tg').value || h.diachi1 || h.diachi2 || '';
+  const gioiTinh = document.getElementById('xhd-gioitinh').value;
+  const daiDien = document.getElementById('xhd-daidien').value;
+  const chucVu = document.getElementById('xhd-chucvu').value;
+  const diaChi = document.getElementById('xhd-diachi').value;
+  const dienThoai = document.getElementById('xhd-dienthoai').value;
+  const email = document.getElementById('xhd-email').value;
+  const hkd = document.getElementById('xhd-hkd').value.trim();
+  const mst = document.getElementById('xhd-mst').value.trim();
+  const diaChiTG = document.getElementById('xhd-diachi-tg').value || diaChi;
   const loaiCT = document.getElementById('xhd-loai-ct').value;
+  const tanSuat = document.getElementById('xhd-tanSuat').value;
   const datCoc = document.getElementById('xhd-datcoc').value;
+  const phiVC = document.getElementById('xhd-phi-vc').value;
   const congNo = document.getElementById('xhd-congno').value;
   const congNoChu = document.getElementById('xhd-congno-chu').value;
-  const phiVC = document.getElementById('xhd-phi-vc').value;
-  
-  // Calculate end date (ngay-1, same month+1 year)
-  const ngayHetHan = parseInt(ngay)-1 || parseInt(ngay);
-  const namHetHan = parseInt(nam)+1;
-  
-  // First chat thai for main fields
-  const ct0 = xhdChatThais[0] || {};
-  const tanSuat = h.tanSuat || '';
-  // tần suất + 1: e.g. "1 lần/năm" -> "2"
+
+  const ngayHetHan = parseInt(ngay) - 1;
+  const namHetHan = parseInt(nam) + 1;
   const tsNum = parseInt(tanSuat) || 1;
-  
-  // Build replacements
+
+  const ct0 = xhdChatThais[0] || {};
+  const kl10 = ct0.khoi ? (parseFloat(ct0.khoi)/10).toFixed(1) : '';
+
   const reps = {
-    '[số hợp đồng]': h.soHD || '',
+    '[số hợp đồng]': soHD,
     '[ngày]': ngay,
     '[tháng]': thang,
     '[năm]': nam,
     '[ngày - 1]': String(ngayHetHan),
     '[năm +1]': String(namHetHan),
-    '[TÊN CÔNG TY]': h.ten || '',
-    '[Giới tính]': h.ghichu?.includes('Bà')||h.ghichu?.includes('bà') ? 'Bà' : 'Ông',
-    '[Tên người đại diện]': h.phuTrach || '',
-    '[Tên Người Đại Diện]': h.phuTrach || '',
-    '[Chức vụ]': '',
-    '[CHỨC VỤ]': '',
-    '[Địa chỉ]': h.diachi1 || '',
-    '[Mã số HKD]': '',
-    '[Mã số thuế]': h.mst || '',
+    '[TÊN CÔNG TY]': ten,
+    '[Giới tính]': gioiTinh,
+    '[Tên người đại diện]': daiDien,
+    '[Tên Người Đại Diện]': daiDien,
+    '[Chức vụ]': chucVu,
+    '[CHỨC VỤ]': chucVu.toUpperCase(),
+    '[Địa chỉ]': diaChi,
+    '[Mã số HKD]': hkd,
+    '[Mã số thuế]': mst,
     '[loại chất thải]': loaiCT || ct0.ten || '',
     '[tần suất]': tanSuat,
-    '[tần suất + 1]': String(tsNum+1),
+    '[tần suất + 1]': String(tsNum + 1),
     '[địa chỉ]': diaChiTG,
     '[địa chỉ thu gom]': diaChiTG,
     '[Tên chất thải]': ct0.ten || '',
@@ -3237,7 +3261,7 @@ function xuatHopDong() {
     '[mã chất thải]': ct0.ma || '',
     '[đvt]': ct0.dvt || '',
     '[khối lượng]': ct0.khoi || '',
-    '[khối lượng/10]': ct0.khoi ? String(parseFloat(ct0.khoi)/10) : '',
+    '[khối lượng/10]': kl10,
     '[kỳ]': ct0.ky || 'năm',
     '[giá tiền]': datCoc || ct0.gia || '',
     '[đơn giá khối lượng phát sinh]': ct0.donGiaPs || '',
@@ -3247,53 +3271,53 @@ function xuatHopDong() {
     '[công nợ bằng chữ]': congNoChu || '',
   };
 
-  // Handle optional Mã số HKD row - if empty, we'll leave it
-  // (full row deletion requires XML manipulation - simplified for now)
-
-  // Do replacement in base64 template
+  toast('⏳ Đang tạo hợp đồng...', 'success');
+  
   try {
-    // Convert b64 to binary
     const binStr = atob(HD_TEMPLATE_B64);
     const bytes = new Uint8Array(binStr.length);
     for(let i=0;i<binStr.length;i++) bytes[i]=binStr.charCodeAt(i);
-    
-    // Use JSZip to manipulate the docx
-    processDocx(bytes, reps);
+    processDocx(bytes, reps, ten, nam, hkd, dienThoai, email);
   } catch(e) {
-    toast('❌ Lỗi xuất hợp đồng: '+e.message, 'error');
+    toast('❌ Lỗi: '+e.message, 'error');
     console.error(e);
   }
 }
 
-async function processDocx(bytes, replacements) {
-  // Load JSZip
+async function processDocx(bytes, replacements, tenKH, nam, hkd, dienThoai, email) {
   if(!window.JSZip) {
-    toast('⏳ Đang tải thư viện...', 'success');
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
   }
   
   const zip = await JSZip.loadAsync(bytes);
-  
-  // Process each XML file
   const xmlFiles = Object.keys(zip.files).filter(f => f.endsWith('.xml') || f.endsWith('.rels'));
   
   for(const fname of xmlFiles) {
     let text = await zip.files[fname].async('text');
+    
     for(const [key, val] of Object.entries(replacements)) {
-      // Escape XML special chars
       const escaped = String(val)
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;');
-      text = text.split(key).join(escaped);
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      // Simple split/join for reliable replacement
+      while(text.includes(key)) {
+        text = text.replace(key, escaped);
+      }
     }
+    
+    // Remove rows with empty Mã số HKD if hkd is empty
+    if(!hkd && fname === 'word/document.xml') {
+      // Remove the HKD row from table - find pattern with [Mã số HKD] already replaced as empty
+      text = text.replace(/<w:tr[^>]*>(?:(?!<\/w:tr>).)*?Mã số HKD(?:(?!<\/w:tr>).)*?<\/w:tr>/gs, '');
+    }
+    
+    // Add Điện thoại and Email rows if provided (insert after Địa chỉ row in Bên B table)
+    // This is complex XML surgery - for now they stay if pre-filled in template
+    
     zip.file(fname, text);
   }
   
-  // Generate and download
   const blob = await zip.generateAsync({type:'blob', compression:'DEFLATE'});
-  const h = HD.find(x=>x.id===xuatHDId);
-  const filename = `HopDong_${h?.ten?.replace(/\s+/g,'_')||'KhachHang'}_${document.getElementById('xhd-nam').value}.docx`;
+  const filename = `HopDong_${tenKH.replace(/\s+/g,'_')}_${nam}.docx`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href=url; a.download=filename; a.click();
@@ -3301,6 +3325,7 @@ async function processDocx(bytes, replacements) {
   closeModal('modal-xuat-hd');
   toast('✅ Đã tải file hợp đồng Word!');
 }
+
 
 function loadScript(src) {
   return new Promise((resolve,reject)=>{
