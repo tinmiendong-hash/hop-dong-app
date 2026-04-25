@@ -658,42 +658,7 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
   <div id="empty-baogia" class="empty" style="display:none"><div class="ei">📝</div>Chưa có báo giá nào</div>
 </div>
 
-</main>
 
-<!-- MOBILE TOP BAR -->
-<div class="mobile-topbar" id="mobile-topbar">
-  <div class="tb-title">♻️ <span id="topbar-title">Dashboard</span></div>
-  <div class="tb-right">
-    <span id="sync-status" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:6px;max-width:120px;text-align:right;line-height:1.2"></span>
-    <button class="tb-menu-btn" onclick="openDrawer()">☰</button>
-  </div>
-</div>
-
-<!-- DRAWER OVERLAY -->
-<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
-
-<!-- DRAWER MENU -->
-<div class="drawer" id="drawer">
-  <div class="drawer-header">
-    <span>♻️ Thu Gom Manager</span>
-    <button class="drawer-close" onclick="closeDrawer()">✕</button>
-  </div>
-  <div class="nav-sec">Tổng quan</div>
-  <button class="drawer-item active" data-page="dashboard" onclick="drawerNav(this)"><span class="dic">📊</span>Dashboard</button>
-  <div class="nav-sec">Hợp đồng</div>
-  <button class="drawer-item" data-page="hdList" onclick="drawerNav(this)"><span class="dic">📋</span>Danh sách HĐ</button>
-  <button class="drawer-item" data-page="lichsu" onclick="drawerNav(this)"><span class="dic">🗂️</span>Lịch sử HĐ</button>
-  <div class="nav-sec">Nghiệp vụ</div>
-  <button class="drawer-item" data-page="bangke" onclick="drawerNav(this)"><span class="dic">🧾</span>Bảng kê</button>
-  <button class="drawer-item" data-page="congno" onclick="drawerNav(this)"><span class="dic">💰</span>Công nợ <span class="drawer-badge" id="bn-cn" style="display:none">0</span></button>
-  <button class="drawer-item" data-page="nhac" onclick="drawerNav(this)"><span class="dic">🔔</span>Nhắc việc <span class="drawer-badge" id="bn-nv" style="display:none">0</span></button>
-  <div class="nav-sec">Tài liệu</div>
-  <button class="drawer-item" data-page="baogiaList" onclick="drawerNav(this)"><span class="dic">📝</span>Báo giá</button>
-  <button class="drawer-item" data-page="soanHD" onclick="drawerNav(this)"><span class="dic">📄</span>Soạn HĐ</button>
-  <button class="drawer-item" data-page="trash" onclick="drawerNav(this)"><span class="dic">🗑️</span>Thùng rác</button>
-</div>
-
-</div>
 <!-- ========== SOẠN HỢP ĐỒNG ========== -->
 <div id="page-soanHD" class="page">
   <div class="ph">
@@ -763,6 +728,7 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
   </div>
 </div>
 
+
 <!-- ========== THÙNG RÁC ========== -->
 <div id="page-trash" class="page">
   <div class="ph">
@@ -776,7 +742,43 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
     <div class="ch"><div class="ct">Hợp đồng & Báo giá đã xóa</div></div>
     <div id="trash-list"></div>
   </div>
+
+</main>
+
+<!-- MOBILE TOP BAR -->
+<div class="mobile-topbar" id="mobile-topbar">
+  <div class="tb-title">♻️ <span id="topbar-title">Dashboard</span></div>
+  <div class="tb-right">
+    <span id="sync-status" style="font-size:10px;color:rgba(255,255,255,.5);margin-right:6px;max-width:120px;text-align:right;line-height:1.2"></span>
+    <button class="tb-menu-btn" onclick="openDrawer()">☰</button>
+  </div>
 </div>
+
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- DRAWER MENU -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span>♻️ Thu Gom Manager</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="nav-sec">Tổng quan</div>
+  <button class="drawer-item active" data-page="dashboard" onclick="drawerNav(this)"><span class="dic">📊</span>Dashboard</button>
+  <div class="nav-sec">Hợp đồng</div>
+  <button class="drawer-item" data-page="hdList" onclick="drawerNav(this)"><span class="dic">📋</span>Danh sách HĐ</button>
+  <button class="drawer-item" data-page="lichsu" onclick="drawerNav(this)"><span class="dic">🗂️</span>Lịch sử HĐ</button>
+  <div class="nav-sec">Nghiệp vụ</div>
+  <button class="drawer-item" data-page="bangke" onclick="drawerNav(this)"><span class="dic">🧾</span>Bảng kê</button>
+  <button class="drawer-item" data-page="congno" onclick="drawerNav(this)"><span class="dic">💰</span>Công nợ <span class="drawer-badge" id="bn-cn" style="display:none">0</span></button>
+  <button class="drawer-item" data-page="nhac" onclick="drawerNav(this)"><span class="dic">🔔</span>Nhắc việc <span class="drawer-badge" id="bn-nv" style="display:none">0</span></button>
+  <div class="nav-sec">Tài liệu</div>
+  <button class="drawer-item" data-page="baogiaList" onclick="drawerNav(this)"><span class="dic">📝</span>Báo giá</button>
+  <button class="drawer-item" data-page="soanHD" onclick="drawerNav(this)"><span class="dic">📄</span>Soạn HĐ</button>
+  <button class="drawer-item" data-page="trash" onclick="drawerNav(this)"><span class="dic">🗑️</span>Thùng rác</button>
+</div>
+
+</div></div>
 
 <!-- ===== MODAL: HỢP ĐỒNG ===== -->
 <div class="ov" id="modal-hd">
