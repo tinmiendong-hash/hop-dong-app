@@ -1953,7 +1953,7 @@ function onNLKhachChange(){
           const color = bk?'var(--accent)': ck.ngayChot<now?'var(--danger)':'var(--muted)';
           const bg = bk?'var(--accent-l)': ck.ngayChot<now?'var(--danger-l)':'var(--surface2)';
           const icon = bk?'✅': ck.ngayChot<now?'⚠️':'📅';
-          return \`<span style="padding:3px 8px;border-radius:4px;background:\${bg};color:\${color};font-size:11px" title="Ngày chốt: \${fmtDate(ck.ngayChot)}">\${icon} T\${ck.soChuKy}: \${fmtDate(ck.ngayChot)}\${bk?' (đã chốt)':''}</span>\`;
+          return `<span style="padding:3px 8px;border-radius:4px;background:${bg};color:${color};font-size:11px" title="Ngày chốt: ${fmtDate(ck.ngayChot)}">${icon} T${ck.soChuKy}: ${fmtDate(ck.ngayChot)}${bk?' (đã chốt)':''}</span>`;
         }).join('')}
       </div>
     </div>`;
