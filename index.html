@@ -492,8 +492,9 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
         _sa({c:0,t:0});
         document.getElementById('login-screen').style.display='none';
         errEl.textContent='';
-        // appInit will be called when main script loads and checks localStorage
-        if(typeof appInit==='function') appInit();
+        // Main script will auto-init since localStorage is now set
+        // Just reload to trigger main script's init check
+        setTimeout(()=>{ location.reload(); }, 100);
       } else {
         const a=_ga(); a.c++; a.t=Date.now(); _sa(a);
         const rem=_MAX-a.c;
@@ -508,7 +509,8 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
     }
   };
 
-  // Check if already logged in
+  // If already logged in, hide login screen immediately
+  // Main script will handle appInit after it loads
   if(localStorage.getItem(_SK)==='1'){
     document.getElementById('login-screen').style.display='none';
   } else {
