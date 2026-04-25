@@ -458,66 +458,7 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
   </div>
 </div>
 
-<script>
-// Define checkPW IMMEDIATELY after login HTML - before any other script loads
-(function(){
-  const _SK = 'tg_auth_v1';
-  const _MAX = 5;
-  const _LK = 15*60*1000;
 
-  async function _h(str){
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-  function _ga(){ try{return JSON.parse(sessionStorage.getItem('_la')||'{"c":0,"t":0}');}catch{return{c:0,t:0};} }
-  function _sa(a){ sessionStorage.setItem('_la', JSON.stringify(a)); }
-
-  window.checkPW = async function(){
-    const errEl = document.getElementById('login-err');
-    const attEl = document.getElementById('login-attempts');
-    try{
-      const att = _ga(); const now = Date.now();
-      if(att.c >= _MAX && (now-att.t) < _LK){
-        const rem = Math.ceil((_LK-(now-att.t))/60000);
-        errEl.textContent = 'Đã khóa. Thử lại sau '+rem+' phút.'; return;
-      }
-      if((now-att.t) >= _LK) _sa({c:0,t:0});
-      const pw = document.getElementById('pw-input').value;
-      if(!pw){ errEl.textContent='Vui lòng nhập mật khẩu'; return; }
-      errEl.textContent = '⏳ Đang xác thực...';
-      const hash = await _h(pw);
-      const correct = await _h('@@');
-      if(hash === correct){
-        localStorage.setItem(_SK,'1');
-        _sa({c:0,t:0});
-        document.getElementById('login-screen').style.display='none';
-        errEl.textContent='';
-        // Main script will auto-init since localStorage is now set
-        // Just reload to trigger main script's init check
-        setTimeout(()=>{ location.reload(); }, 100);
-      } else {
-        const a=_ga(); a.c++; a.t=Date.now(); _sa(a);
-        const rem=_MAX-a.c;
-        errEl.textContent='❌ Mật khẩu không đúng!';
-        attEl.textContent=rem>0?'Còn '+rem+' lần thử':'Đã khóa 15 phút';
-        document.getElementById('pw-input').value='';
-        document.getElementById('pw-input').focus();
-      }
-    }catch(e){
-      errEl.textContent='❌ Lỗi: '+e.message;
-      console.error('checkPW error:',e);
-    }
-  };
-
-  // If already logged in, hide login screen immediately
-  // Main script will handle appInit after it loads
-  if(localStorage.getItem(_SK)==='1'){
-    document.getElementById('login-screen').style.display='none';
-  } else {
-    setTimeout(()=>{ const el=document.getElementById('pw-input'); if(el) el.focus(); },200);
-  }
-})();
-</script>
 
 <div class="app">
 
@@ -527,7 +468,7 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
   <div class="sb-logo">
     <h1>♻️ Thu Gom<br>Manager</h1>
     <span>v3.0</span>
-    <div id="sync-status" style="font-size:10px;color:rgba(255,255,255,.4);margin-top:6px;line-height:1.4">Đang kết nối...</div>
+    <div id="sync-status" style="font-size:10px;color:rgba(255,255,255,.4);margin-top:6px;line-height:1.4"></div>
 
   </div>
   <div class="nav">
@@ -2903,22 +2844,6 @@ function renderAll(){
 }
 
 // appInit - called after successful login
-function appInit() {
-  loadData();
-  loadNgayChot();
-  renderDashboard();
-  updateBadges();
-  syncDown();
-  // If auto-init was requested before appInit was defined
-  if(window._autoInit) {
-    window._autoInit = false;
-  }
-}
-// If already logged in before this script loaded
-if(window._autoInit) {
-  appInit();
-}
-
 // ===== DRAWER MOBILE NAV =====
 const PAGE_NAMES = {
   dashboard:'📊 Dashboard', hdList:'📋 Hợp đồng', trash:'🗑️ Thùng rác',
@@ -3112,7 +3037,19 @@ async function traCuuMST(){
 }
 
 
-// sync is called from appInit() after login only
+// ===================== INIT =====================
+function appInit(){
+  loadData();
+  loadNgayChot();
+  renderDashboard();
+  updateBadges();
+  syncDown();
+}
+
+// Run init if already logged in
+if(localStorage.getItem('tg_auth_v1')==='1'){
+  appInit();
+}
 
 </script>
 </body>
