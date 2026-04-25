@@ -767,7 +767,10 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
 <div id="page-trash" class="page">
   <div class="ph">
     <div class="pt">Thùng rác <small>Các mục đã xóa — có thể khôi phục</small></div>
-    <button class="btn br bs no-print" onclick="emptyTrash()">🗑️ Xóa tất cả vĩnh viễn</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn bou bs no-print" onclick="syncDown()">↺ Làm mới</button>
+      <button class="btn br bs no-print" onclick="emptyTrash()">🗑️ Xóa tất cả vĩnh viễn</button>
+    </div>
   </div>
   <div class="card">
     <div class="ch"><div class="ct">Hợp đồng & Báo giá đã xóa</div></div>
@@ -2883,10 +2886,10 @@ function restoreItem(id){
   if(idx<0) return;
   const item = {...TRASH[idx]};
   TRASH.splice(idx,1);
-  // Remove internal trash markers
+  const fromType = item._deletedFrom;
   delete item._deletedAt; delete item._deletedFrom;
-  if(item._deletedFrom==='hd'||!item._deletedFrom) { item._deletedFrom=undefined; HD.push(item); sbUpsert('hop_dong',item); }
-  else if(item._deletedFrom==='bg') { BAOGIA.push(item); sbUpsert('bao_gia',item); }
+  if(fromType==='bg') { BAOGIA.push(item); sbUpsert('bao_gia',item); }
+  else { HD.push(item); sbUpsert('hop_dong',item); }
   sbDelete('thung_rac', id);
   persist();
   renderTrash(); renderHD();
@@ -2920,6 +2923,8 @@ function renderAll(){
     else if(p==='congno')renderCongNo();
     else if(p==='nhac')renderNhac();
     else if(p==='baogiaList')renderBaoGiaList();
+    else if(p==='trash')renderTrash();
+    else if(p==='soanHD')renderSoanHD();
   }
 }
 
