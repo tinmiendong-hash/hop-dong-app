@@ -1418,7 +1418,9 @@ function navTo(el){
     if(x.dataset.page===p) x.classList.add('active');
     else x.classList.remove('active');
   });
-  document.getElementById('page-'+p).classList.add('active');
+  const pageEl = document.getElementById('page-'+p);
+  if(!pageEl) return;
+  pageEl.classList.add('active');
   if(p==='dashboard') renderDashboard();
   else if(p==='hdList') renderHD();
   else if(p==='lichsu') renderLichSu();
@@ -2821,6 +2823,7 @@ function updateBadges(){
     const d=Math.round((cd-todayD)/86400000);
     return d>=0&&d<=3;
   }).length;
+  const in7b=addDays(now,7);
   const congNoHanCount =
     HD.filter(h=>h.status==='active'&&h.ttTT!=='da'&&h.ngayHanTT&&(h.ngayHanTT<now||(h.ngayHanTT>=now&&h.ngayHanTT<=in7b))&&((h.giatri||0)-(h.daThu||0))>0).length +
     BK.filter(b=>b.ttTT!=='da'&&b.ngayHanTT&&(b.ngayHanTT<now||(b.ngayHanTT>=now&&b.ngayHanTT<=in7b))&&((b.tongTien||0)-(b.daThu||0))>0).length;
@@ -2854,9 +2857,10 @@ function toast(msg,type='success'){
 // ===================== RENDER ALL =====================
 function renderTrash(){
   const list = document.getElementById('trash-list');
-  if(!list) return;
+  if(!list){ console.error('trash-list not found!'); return; }
+  if(!Array.isArray(TRASH)) TRASH = [];
   if(!TRASH.length){
-    list.innerHTML='<div class="empty"><div class="ei">🗑️</div>Thùng rác trống</div>';
+    list.innerHTML='<div class="empty"><div class="ei" style="font-size:36px">🗑️</div><p>Thùng rác trống</p></div>';
     return;
   }
   list.innerHTML = [...TRASH].reverse().map(item=>{
@@ -3150,10 +3154,12 @@ let xuatHDId = null;
 let xhdChatThais = [];
 
 function renderSoanHD() {
+  const wrap = document.getElementById('xhd-chatthailist');
+  if(!Array.isArray(xhdChatThais)) xhdChatThais = [];
   if(!xhdChatThais.length) {
     xhdChatThais = [{ ma:'', ten:'', trangThai:'Rắn', dvt:'kg', khoi:'', ky:'năm', gia:'', donGiaPs:'', donGiaBd:'' }];
-    renderXHDChatThai();
   }
+  renderXHDChatThai();
   renderSoanList();
 }
 
@@ -3221,6 +3227,7 @@ function renderSoanList() {
   const card = document.getElementById('soan-saved-list');
   const body = document.getElementById('soan-list-body');
   if(!card||!body) return;
+  if(!Array.isArray(SOAN_HDS)) SOAN_HDS = [];
   const drafts = SOAN_HDS.filter(x=>x.status==='draft');
   card.style.display = drafts.length ? 'block' : 'none';
   body.innerHTML = drafts.map(d=>`
@@ -3375,6 +3382,7 @@ function addXHDChatThai() {
 
 function renderXHDChatThai() {
   const wrap = document.getElementById('xhd-chatthailist');
+  if(!wrap) return;
   wrap.innerHTML = xhdChatThais.map((ct,i) => `
     <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
