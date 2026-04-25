@@ -2196,8 +2196,7 @@ function renderCongNo(){
     if(b.ttTT==='da') return false;
     const con=(b.tongTien||0)-(b.daThu||0);
     if(con<=0) return false;
-    // Chưa đến hạn TT thì không hiện trong công nợ
-    if(b.ngayHanTT&&b.ngayHanTT>now_cn) return false;
+    if(b.ngayHanTT&&b.ngayHanTT>now_d) return false;
     return true;
   });
   let tongHD=0,tongBK=0;
@@ -2644,8 +2643,8 @@ function delBG(id){
 function renderDashboard(){
   document.getElementById('dash-date').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
   const now=todayStr();const in14=addDays(now,14);
+  const now_d=now; const in7b=addDays(now,7);
   const active=HD.filter(h=>h.status==='active');
-  const now_d = todayStr();
   const cnHD=active.filter(h=>{
     if(h.loai==='Đơn giá'||h.ttTT==='da') return false;
     const gV = h.giatriCoVAT||h.giatri||0;
@@ -2659,8 +2658,7 @@ function renderDashboard(){
     if(b.ttTT==='da') return false;
     const con=(b.tongTien||0)-(b.daThu||0);
     if(con<=0) return false;
-    // Chưa đến hạn TT thì không hiện trong công nợ
-    if(b.ngayHanTT&&b.ngayHanTT>now_cn) return false;
+    if(b.ngayHanTT&&b.ngayHanTT>now_d) return false;
     return true;
   });
   let tong=0;
@@ -2736,7 +2734,6 @@ function updateBadges(){
     const d=Math.round((cd-todayD)/86400000);
     return d>=0&&d<=3;
   }).length;
-  const in7b = addDays(now,7);
   const congNoHanCount =
     HD.filter(h=>h.status==='active'&&h.ttTT!=='da'&&h.ngayHanTT&&(h.ngayHanTT<now||(h.ngayHanTT>=now&&h.ngayHanTT<=in7b))&&((h.giatri||0)-(h.daThu||0))>0).length +
     BK.filter(b=>b.ttTT!=='da'&&b.ngayHanTT&&(b.ngayHanTT<now||(b.ngayHanTT>=now&&b.ngayHanTT<=in7b))&&((b.tongTien||0)-(b.daThu||0))>0).length;
@@ -3038,11 +3035,14 @@ async function traCuuMST(){
 
 // ===================== INIT =====================
 function appInit(){
-  loadData();
-  loadNgayChot();
-  renderDashboard();
-  updateBadges();
-  syncDown();
+  try { loadData(); } catch(e){ console.error('loadData error:',e); }
+  try { loadNgayChot(); } catch(e){ console.error('loadNgayChot error:',e); }
+  try { renderDashboard(); } catch(e){ console.error('renderDashboard error:',e); }
+  try { updateBadges(); } catch(e){ console.error('updateBadges error:',e); }
+  // Sync separately - don't block UI if cloud is down
+  setTimeout(function(){
+    try { syncDown(); } catch(e){ console.error('syncDown error:',e); showSyncStatus('❌ '+e.message); }
+  }, 200);
 }
 
 // Run init if already logged in
