@@ -482,6 +482,7 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
     <div class="ni" data-page="nhac" onclick="navTo(this)"><span class="ic">🔔</span><span>Nhắc việc</span><span class="nb" id="nb-nv">0</span></div>
     <div class="nav-sec">Tài liệu</div>
     <div class="ni" data-page="baogiaList" onclick="navTo(this)"><span class="ic">📝</span><span>Báo giá</span></div>
+    <div class="ni" data-page="soanHD" onclick="navTo(this)"><span class="ic">📄</span><span>Soạn HĐ</span></div>
     <div class="ni" data-page="trash" onclick="navTo(this)"><span class="ic">🗑️</span><span>Thùng rác</span></div>
   </div>
 </nav>
@@ -688,10 +689,80 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
   <button class="drawer-item" data-page="nhac" onclick="drawerNav(this)"><span class="dic">🔔</span>Nhắc việc <span class="drawer-badge" id="bn-nv" style="display:none">0</span></button>
   <div class="nav-sec">Tài liệu</div>
   <button class="drawer-item" data-page="baogiaList" onclick="drawerNav(this)"><span class="dic">📝</span>Báo giá</button>
+  <button class="drawer-item" data-page="soanHD" onclick="drawerNav(this)"><span class="dic">📄</span>Soạn HĐ</button>
   <button class="drawer-item" data-page="trash" onclick="drawerNav(this)"><span class="dic">🗑️</span>Thùng rác</button>
 </div>
 
 </div>
+<!-- ========== SOẠN HỢP ĐỒNG ========== -->
+<div id="page-soanHD" class="page">
+  <div class="ph">
+    <div class="pt">Soạn Hợp đồng <small>Điền thông tin → Xuất file Word → In & ký → Nhập vào Danh sách HĐ</small></div>
+    <button class="btn bp no-print" onclick="xuatHopDong()">📥 Xuất file Word</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card">
+      <div class="ch"><div class="ct">📋 Thông tin hợp đồng</div></div>
+      <div class="g2" style="margin-bottom:12px">
+        <div class="fg"><label>Số hợp đồng <span class="req">*</span></label><input id="xhd-soHD" placeholder="001/2026/HĐ-MĐ"></div>
+        <div class="fg"><label>Loại chất thải (mô tả)</label><input id="xhd-loai-ct" placeholder="VD: nguy hại"></div>
+        <div class="fg"><label>Ngày ký</label><input type="number" id="xhd-ngay" min="1" max="31" placeholder="25" oninput="updateNgayHetHan()"></div>
+        <div class="fg"><label>Tháng ký</label><input type="number" id="xhd-thang" min="1" max="12" placeholder="04"></div>
+        <div class="fg"><label>Năm ký</label><input type="number" id="xhd-nam" placeholder="2026" oninput="updateNgayHetHan()"></div>
+        <div class="fg"><label>Tần suất thu gom</label><input id="xhd-tanSuat" placeholder="VD: 01 lần/năm"></div>
+      </div>
+      <div class="alert ai" id="xhd-hethan-info" style="font-size:12px">📅 Hiệu lực đến: nhập ngày ký để tính</div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><div class="ct">🏢 Thông tin Bên B</div></div>
+      <div class="g2">
+        <div class="fg"><label>Tên công ty / cá nhân <span class="req">*</span></label><input id="xhd-ten" placeholder="CÔNG TY TNHH ABC"></div>
+        <div class="fg"><label>Mã số thuế</label><input id="xhd-mst" placeholder="0123456789"></div>
+        <div class="fg"><label>Giới tính đại diện</label>
+          <select id="xhd-gioitinh"><option value="Ông">Ông</option><option value="Bà">Bà</option></select>
+        </div>
+        <div class="fg"><label>Tên người đại diện</label><input id="xhd-daidien" placeholder="Nguyễn Văn A"></div>
+        <div class="fg"><label>Chức vụ</label><input id="xhd-chucvu" placeholder="Giám đốc"></div>
+        <div class="fg"><label>Địa chỉ</label><input id="xhd-diachi" placeholder="123 Đường ABC, TP.HCM"></div>
+        <div class="fg"><label>Điện thoại</label><input id="xhd-dienthoai" placeholder="0901234567"></div>
+        <div class="fg"><label>Email</label><input id="xhd-email" placeholder="abc@email.com"></div>
+        <div class="fg"><label>Mã số HKD <span class="hint">(bỏ trống = xóa dòng)</span></label><input id="xhd-hkd" placeholder="Để trống nếu không có"></div>
+        <div class="fg"><label>Địa chỉ thu gom (nếu khác)</label><input id="xhd-diachi-tg" placeholder="Để trống = dùng địa chỉ trên"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ct">🧪 Danh mục chất thải — Điều 2</div>
+      <button class="btn bou bs no-print" onclick="addXHDChatThai()">+ Thêm dòng</button>
+    </div>
+    <div id="xhd-chatthailist"></div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="ct">💰 Điều khoản thanh toán — Điều 4</div></div>
+    <div class="g4">
+      <div class="fg"><label>Đặt cọc đợt 1 (VND)</label><input id="xhd-datcoc" type="text" placeholder="5.000.000" oninput="fmtInput(this)"></div>
+      <div class="fg"><label>Phí VC phát sinh/chuyến (VND)</label><input id="xhd-phi-vc" type="text" placeholder="500.000" oninput="fmtInput(this)"></div>
+      <div class="fg"><label>Công nợ (số ngày)</label><input id="xhd-congno" type="number" placeholder="30"></div>
+      <div class="fg"><label>Công nợ bằng chữ</label><input id="xhd-congno-chu" placeholder="ba mươi"></div>
+    </div>
+  </div>
+
+  <div class="card" id="soan-saved-list" style="display:none">
+    <div class="ch"><div class="ct">📁 Bản nháp đã lưu</div></div>
+    <div id="soan-list-body"></div>
+  </div>
+  <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+    <button class="btn bp" onclick="xuatHopDong()">📥 Xuất file Word</button>
+    <button class="btn bou" onclick="luuBanNhap()">💾 Lưu bản nháp</button>
+    <button class="btn bou" onclick="clearSoanHD()">🗑️ Xóa form</button>
+  </div>
+</div>
+
 <!-- ========== THÙNG RÁC ========== -->
 <div id="page-trash" class="page">
   <div class="ph">
@@ -1123,63 +1194,6 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
 </div>
 
 
-<!-- ===== MODAL: XUẤT HỢP ĐỒNG WORD ===== -->
-<div class="ov" id="modal-xuat-hd">
-<div class="modal modal-xl">
-  <div class="mh">
-    <div class="mt">📄 Soạn & Xuất Hợp đồng Word</div>
-    <button class="cx" onclick="closeModal('modal-xuat-hd')">✕</button>
-  </div>
-  <div class="mb">
-    <div class="sl">Thông tin hợp đồng</div>
-    <div class="g4" style="margin-bottom:12px">
-      <div class="fg"><label>Số hợp đồng <span class="req">*</span></label><input id="xhd-soHD" placeholder="001/2026/HĐ-MĐ"></div>
-      <div class="fg"><label>Ngày ký</label><input type="number" id="xhd-ngay" min="1" max="31" placeholder="25"></div>
-      <div class="fg"><label>Tháng ký</label><input type="number" id="xhd-thang" min="1" max="12" placeholder="04"></div>
-      <div class="fg"><label>Năm ký</label><input type="number" id="xhd-nam" placeholder="2026"></div>
-    </div>
-    <div class="sl">Thông tin Bên B</div>
-    <div class="g2" style="margin-bottom:12px">
-      <div class="fg"><label>Tên công ty / cá nhân <span class="req">*</span></label><input id="xhd-ten" placeholder="CÔNG TY TNHH ABC"></div>
-      <div class="fg"><label>Mã số thuế</label><input id="xhd-mst" placeholder="0123456789"></div>
-      <div class="fg"><label>Giới tính người đại diện</label>
-        <select id="xhd-gioitinh">
-          <option value="Ông">Ông</option>
-          <option value="Bà">Bà</option>
-        </select>
-      </div>
-      <div class="fg"><label>Tên người đại diện</label><input id="xhd-daidien" placeholder="Nguyễn Văn A"></div>
-      <div class="fg"><label>Chức vụ</label><input id="xhd-chucvu" placeholder="Giám đốc"></div>
-      <div class="fg"><label>Địa chỉ</label><input id="xhd-diachi" placeholder="123 Đường ABC, TP.HCM"></div>
-      <div class="fg"><label>Điện thoại</label><input id="xhd-dienthoai" placeholder="0901234567"></div>
-      <div class="fg"><label>Email</label><input id="xhd-email" placeholder="abc@email.com"></div>
-      <div class="fg"><label>Mã số HKD <span class="hint">(bỏ trống = xóa dòng)</span></label><input id="xhd-hkd" placeholder="Để trống nếu không có"></div>
-      <div class="fg"><label>Địa chỉ thu gom (nếu khác)</label><input id="xhd-diachi-tg" placeholder="Để trống = dùng địa chỉ trên"></div>
-    </div>
-    <div class="sl">Nội dung thu gom (Điều 1)</div>
-    <div class="g2" style="margin-bottom:12px">
-      <div class="fg"><label>Loại chất thải (mô tả)</label><input id="xhd-loai-ct" placeholder="VD: nguy hại"></div>
-      <div class="fg"><label>Tần suất thu gom</label><input id="xhd-tanSuat" placeholder="VD: 01 lần/năm"></div>
-    </div>
-    <div class="sl">Danh mục chất thải — Điều 2</div>
-    <div id="xhd-chatthailist"></div>
-    <button class="btn bou bs no-print" onclick="addXHDChatThai()" style="margin-top:8px">+ Thêm dòng chất thải</button>
-    <hr class="div">
-    <div class="sl">Điều khoản thanh toán — Điều 4</div>
-    <div class="g4" style="margin-bottom:12px">
-      <div class="fg"><label>Đặt cọc đợt 1 (VND)</label><input id="xhd-datcoc" type="text" placeholder="5.000.000" oninput="fmtInput(this)"></div>
-      <div class="fg"><label>Phí VC phát sinh/chuyến (VND)</label><input id="xhd-phi-vc" type="text" placeholder="500.000" oninput="fmtInput(this)"></div>
-      <div class="fg"><label>Công nợ (số ngày)</label><input id="xhd-congno" type="number" placeholder="30"></div>
-      <div class="fg"><label>Công nợ bằng chữ</label><input id="xhd-congno-chu" placeholder="ba mươi"></div>
-    </div>
-  </div>
-  <div class="mf">
-    <button class="btn bou" onclick="closeModal('modal-xuat-hd')">Hủy</button>
-    <button class="btn bp" onclick="xuatHopDong()">📥 Tải file Word</button>
-  </div>
-</div>
-</div>
-
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1188,7 +1202,7 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
 <script>
 
 // ===================== STATE =====================
-let HD=[], BK=[], BAOGIA=[], TRASH=[];
+let HD=[], BK=[], BAOGIA=[], TRASH=[], SOAN_HDS=[];
 let editHDId=null, huyCTX=null, taikyCTX=null, ttCTX=null, bgEditId=null, kghCTX=null;
 let hdLoai='Khoán năm', dgType='khoi_luong', nlMode='chitiet', nlRows=[], nlCurHD=null;
 
@@ -1237,6 +1251,8 @@ function loadData(){
     BAOGIA=Array.isArray(_bg)?_bg:[];
     const _tr=JSON.parse(localStorage.getItem('trash_v3')||'[]');
     TRASH=Array.isArray(_tr)?_tr:[];
+    const _sh=JSON.parse(localStorage.getItem('soan_hds')||'[]');
+    SOAN_HDS=Array.isArray(_sh)?_sh:[];
   } catch(e){ HD=[];BK=[];BAOGIA=[];console.error(e); }
 }
 function persist(){
@@ -1244,6 +1260,7 @@ function persist(){
   localStorage.setItem('bk_v3',JSON.stringify(BK));
   localStorage.setItem('baogia_v3',JSON.stringify(BAOGIA));
   localStorage.setItem('trash_v3',JSON.stringify(TRASH));
+  localStorage.setItem('soan_hds',JSON.stringify(SOAN_HDS));
 }
 
 // ===================== UTILS =====================
@@ -1406,6 +1423,7 @@ function navTo(el){
   else if(p==='congno') renderCongNo();
   else if(p==='nhac') renderNhac();
   else if(p==='baogiaList') renderBaoGiaList();
+  else if(p==='soanHD') renderSoanHD();
   else if(p==='trash') renderTrash();
 }
 
@@ -1810,7 +1828,6 @@ function renderHD(){
       <td class="no-print"><div style="display:flex;gap:4px;flex-wrap:wrap">
         ${h.loai!=='Đơn giá'?`<button class="btn bxs bou" onclick="openTT('hd','${h.id}')">💰</button>`:''}
         ${['Đơn giá','Khoán tháng'].includes(h.loai)?`<button class="btn bxs bo" onclick="openNLFor('${h.id}')">🧾</button>`:''}
-        <button class="btn bxs bt" onclick="openXuatHD('${h.id}')" title="Xuất hợp đồng Word">📄</button>
         <button class="btn bxs bg" onclick="editHD('${h.id}')">✏️</button>
         <button class="btn bxs bg" onclick="openHuyHD('${h.id}')" title="Hủy HĐ" style="color:var(--warn)">🚫</button>
         <button class="btn bxs bg" style="color:var(--danger)" onclick="delHD('${h.id}')">🗑️</button>
@@ -2909,7 +2926,7 @@ function renderAll(){
 // appInit - called after successful login
 // ===== DRAWER MOBILE NAV =====
 const PAGE_NAMES = {
-  dashboard:'📊 Dashboard', hdList:'📋 Hợp đồng', trash:'🗑️ Thùng rác',
+  dashboard:'📊 Dashboard', hdList:'📋 Hợp đồng', soanHD:'📄 Soạn HĐ', trash:'🗑️ Thùng rác',
   lichsu:'🗂️ Lịch sử HĐ', bangke:'🧾 Bảng kê',
   congno:'💰 Công nợ', nhac:'🔔 Nhắc việc',
   baogiaList:'📝 Báo giá'
@@ -2967,20 +2984,23 @@ async function sbDelete(table, id) {
 async function syncDown() {
   try {
     showSyncStatus('⏳ Đang tải...');
-    const [hdRows, bkRows, bgRows, trashRows] = await Promise.all([
+    const [hdRows, bkRows, bgRows, trashRows, soanRows] = await Promise.all([
       sbFetch('GET', 'hop_dong?select=data&order=updated_at.desc'),
       sbFetch('GET', 'bang_ke?select=data&order=updated_at.desc'),
       sbFetch('GET', 'bao_gia?select=data&order=updated_at.desc'),
       sbFetch('GET', 'thung_rac?select=data&order=updated_at.desc'),
+      sbFetch('GET', 'soan_hds?select=data&order=updated_at.desc'),
     ]);
     if(Array.isArray(hdRows)) HD = hdRows.map(r=>r.data).filter(Boolean);
     if(Array.isArray(bkRows)) BK = bkRows.map(r=>r.data).filter(Boolean);
     if(Array.isArray(bgRows)) BAOGIA = bgRows.map(r=>r.data).filter(Boolean);
     if(Array.isArray(trashRows)) TRASH = trashRows.map(r=>r.data).filter(Boolean);
+    if(Array.isArray(soanRows)) SOAN_HDS = soanRows.map(r=>r.data).filter(Boolean);
     // backup to localStorage
     localStorage.setItem('hd_v3', JSON.stringify(HD));
     localStorage.setItem('bk_v3', JSON.stringify(BK));
     localStorage.setItem('baogia_v3', JSON.stringify(BAOGIA));
+    localStorage.setItem('soan_hds', JSON.stringify(SOAN_HDS));
     renderAll();
     showSyncStatus('✅ ' + new Date().toLocaleTimeString('vi-VN'));
   } catch(e) {
@@ -3035,6 +3055,7 @@ async function _syncAllUp() {
       ...BK.map(b=>sbUpsert('bang_ke', b)),
       ...BAOGIA.map(g=>sbUpsert('bao_gia', g)),
       ...TRASH.map(t=>sbUpsert('thung_rac', t)),
+      ...SOAN_HDS.map(s=>sbUpsert('soan_hds', s)),
     ]);
     showSyncStatus('✅ ' + new Date().toLocaleTimeString('vi-VN'));
   } catch(e) {
@@ -3123,6 +3144,194 @@ const HD_TEMPLATE_B64 = 'UEsDBBQABgAIAAAAIQAibe/K1wEAAHwKAAATAAgCW0NvbnRlbnRfVHl
 let xuatHDId = null;
 let xhdChatThais = [];
 
+function renderSoanHD() {
+  if(!xhdChatThais.length) {
+    xhdChatThais = [{ ma:'', ten:'', trangThai:'Rắn', dvt:'kg', khoi:'', ky:'năm', gia:'', donGiaPs:'', donGiaBd:'' }];
+    renderXHDChatThai();
+  }
+  renderSoanList();
+}
+
+function getSoanFormData() {
+  return {
+    id: window._currentSoanId || uid(),
+    soHD: document.getElementById('xhd-soHD')?.value||'',
+    ngay: document.getElementById('xhd-ngay')?.value||'',
+    thang: document.getElementById('xhd-thang')?.value||'',
+    nam: document.getElementById('xhd-nam')?.value||'',
+    ten: document.getElementById('xhd-ten')?.value||'',
+    mst: document.getElementById('xhd-mst')?.value||'',
+    gioiTinh: document.getElementById('xhd-gioitinh')?.value||'Ông',
+    daiDien: document.getElementById('xhd-daidien')?.value||'',
+    chucVu: document.getElementById('xhd-chucvu')?.value||'',
+    diaChi: document.getElementById('xhd-diachi')?.value||'',
+    dienThoai: document.getElementById('xhd-dienthoai')?.value||'',
+    email: document.getElementById('xhd-email')?.value||'',
+    hkd: document.getElementById('xhd-hkd')?.value||'',
+    diaChiTG: document.getElementById('xhd-diachi-tg')?.value||'',
+    loaiCT: document.getElementById('xhd-loai-ct')?.value||'',
+    tanSuat: document.getElementById('xhd-tanSuat')?.value||'',
+    datCoc: document.getElementById('xhd-datcoc')?.value||'',
+    phiVC: document.getElementById('xhd-phi-vc')?.value||'',
+    congNo: document.getElementById('xhd-congno')?.value||'',
+    congNoChu: document.getElementById('xhd-congno-chu')?.value||'',
+    chatThais: JSON.parse(JSON.stringify(xhdChatThais)),
+    status: 'draft',
+    savedAt: new Date().toISOString()
+  };
+}
+
+function loadSoanForm(data) {
+  window._currentSoanId = data.id;
+  const fields = {
+    'xhd-soHD': data.soHD, 'xhd-ngay': data.ngay, 'xhd-thang': data.thang,
+    'xhd-nam': data.nam, 'xhd-ten': data.ten, 'xhd-mst': data.mst,
+    'xhd-daidien': data.daiDien, 'xhd-chucvu': data.chucVu,
+    'xhd-diachi': data.diaChi, 'xhd-dienthoai': data.dienThoai,
+    'xhd-email': data.email, 'xhd-hkd': data.hkd,
+    'xhd-diachi-tg': data.diaChiTG, 'xhd-loai-ct': data.loaiCT,
+    'xhd-tanSuat': data.tanSuat, 'xhd-datcoc': data.datCoc,
+    'xhd-phi-vc': data.phiVC, 'xhd-congno': data.congNo,
+    'xhd-congno-chu': data.congNoChu
+  };
+  Object.entries(fields).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val||''; });
+  if(document.getElementById('xhd-gioitinh')) document.getElementById('xhd-gioitinh').value = data.gioiTinh||'Ông';
+  xhdChatThais = data.chatThais || [];
+  renderXHDChatThai();
+  updateNgayHetHan();
+  toast('📂 Đã tải bản nháp: ' + (data.ten||data.soHD||''));
+}
+
+function luuBanNhap() {
+  const data = getSoanFormData();
+  if(!data.ten && !data.soHD) { toast('Nhập ít nhất Số HĐ hoặc Tên công ty', 'error'); return; }
+  const idx = SOAN_HDS.findIndex(x=>x.id===data.id);
+  if(idx>=0) SOAN_HDS[idx]=data; else SOAN_HDS.push(data);
+  persist();
+  renderSoanList();
+  toast('💾 Đã lưu bản nháp: '+(data.ten||data.soHD));
+}
+
+function renderSoanList() {
+  const card = document.getElementById('soan-saved-list');
+  const body = document.getElementById('soan-list-body');
+  if(!card||!body) return;
+  const drafts = SOAN_HDS.filter(x=>x.status==='draft');
+  card.style.display = drafts.length ? 'block' : 'none';
+  body.innerHTML = drafts.map(d=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <strong>${d.ten||'—'}</strong>
+        <span class="badge b-gr" style="margin-left:6px">${d.soHD||'Chưa có số HĐ'}</span>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">
+          Lưu lúc: ${new Date(d.savedAt).toLocaleString('vi-VN')}
+          ${d.chatThais?.length?` · ${d.chatThais.length} loại chất thải`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn bxs bou no-print" onclick="loadSoanForm(SOAN_HDS.find(x=>x.id==='${d.id}'))">✏️ Sửa</button>
+        <button class="btn bxs bp no-print" onclick="khachDaKy('${d.id}')">✅ Khách đã ký</button>
+        <button class="btn bxs bg no-print" style="color:var(--danger)" onclick="xoaBanNhap('${d.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('') || '<div class="empty" style="padding:16px">Chưa có bản nháp</div>';
+}
+
+function xoaBanNhap(id) {
+  if(!confirm('Xóa bản nháp này?')) return;
+  SOAN_HDS = SOAN_HDS.filter(x=>x.id!==id);
+  persist();
+  sbDelete('soan_hds', id);
+  renderSoanList(); toast('Đã xóa bản nháp');
+}
+
+function khachDaKy(id) {
+  const d = SOAN_HDS.find(x=>x.id===id); if(!d) return;
+  // Convert to HD object
+  const ct0 = d.chatThais?.[0] || {};
+  const ngaybd = d.nam&&d.thang&&d.ngay ? `${d.nam}-${String(d.thang).padStart(2,'0')}-${String(d.ngay).padStart(2,'0')}` : todayStr();
+  const namHetHan = parseInt(d.nam||new Date().getFullYear())+1;
+  const ngayHetHan = `${namHetHan}-${String(d.thang||'01').padStart(2,'0')}-${String(Math.max(1,parseInt(d.ngay||1)-1)).padStart(2,'0')}`;
+  const newHD = {
+    id: uid(),
+    loai: 'Khoán năm',
+    ten: d.ten || '',
+    mst: d.mst || '',
+    sdt: d.dienThoai || '',
+    email: d.email || '',
+    diachi1: d.diaChi || '',
+    diachi2: d.diaChiTG || '',
+    phuTrach: d.daiDien || '',
+    sdtPT: '',
+    ghichu: '',
+    soHD: d.soHD || '',
+    ngaybd,
+    ngaykt: ngayHetHan,
+    giatri: parseMoney(d.datCoc) || 0,
+    vat: 8,
+    giatriCoVAT: Math.round((parseMoney(d.datCoc)||0)*1.08),
+    hoahong: 0,
+    tanSuat: d.tanSuat || '',
+    thuGomTiep: '',
+    ghichuTG: '',
+    phuongThucTT: 'ky_xuat_tt',
+    hanTT: parseInt(d.congNo)||0,
+    ngayHanTT: '',
+    tamUng: 0,
+    ttTT: 'chua',
+    daThu: 0,
+    ngayTT: '',
+    ghichuTT: '',
+    dgLoai: 'khoi_luong',
+    dvt: ct0.dvt || 'kg',
+    dongia: 0,
+    dongialan: 0,
+    status: 'active',
+    _fromSoan: id
+  };
+  // Mark draft as signed
+  const idx = SOAN_HDS.findIndex(x=>x.id===id);
+  if(idx>=0) SOAN_HDS[idx].status = 'signed';
+  HD.push(newHD);
+  persist();
+  renderSoanList();
+  toast('✅ Đã chuyển sang Danh sách HĐ! Vào chỉnh sửa để cập nhật thêm thông tin.');
+  // Navigate to HD list and highlight new one
+  setTimeout(()=>{
+    navTo(document.querySelector('[data-page=hdList]'));
+    renderHD();
+  }, 800);
+}
+
+function renderSoanHD_OLD() {
+  // Init chat thai if empty
+  if(!xhdChatThais.length) {
+    xhdChatThais = [{ ma:'', ten:'', trangThai:'Rắn', dvt:'kg', khoi:'', ky:'năm', gia:'', donGiaPs:'', donGiaBd:'' }];
+    renderXHDChatThai();
+  }
+}
+
+function updateNgayHetHan() {
+  const ngay = parseInt(document.getElementById('xhd-ngay')?.value)||0;
+  const nam = parseInt(document.getElementById('xhd-nam')?.value)||0;
+  const el = document.getElementById('xhd-hethan-info');
+  if(el && ngay && nam) {
+    el.innerHTML = `📅 Hiệu lực đến: <strong>ngày ${ngay-1||ngay} / tháng ký / năm ${nam+1}</strong>`;
+  }
+}
+
+function clearSoanHD() {
+  if(!confirm('Xóa toàn bộ thông tin đã nhập?')) return;
+  ['xhd-soHD','xhd-loai-ct','xhd-ngay','xhd-thang','xhd-nam','xhd-tanSuat',
+   'xhd-ten','xhd-mst','xhd-daidien','xhd-chucvu','xhd-diachi','xhd-dienthoai',
+   'xhd-email','xhd-hkd','xhd-diachi-tg','xhd-datcoc','xhd-phi-vc','xhd-congno','xhd-congno-chu'
+  ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('xhd-gioitinh').value='Ông';
+  xhdChatThais=[{ ma:'', ten:'', trangThai:'Rắn', dvt:'kg', khoi:'', ky:'năm', gia:'', donGiaPs:'', donGiaBd:'' }];
+  renderXHDChatThai();
+  toast('Đã xóa form');
+}
+
 function openXuatHD(id) {
   xuatHDId = id;
   const h = HD.find(x=>x.id===id); if(!h) return;
@@ -3151,7 +3360,7 @@ function openXuatHD(id) {
   document.getElementById('xhd-congno').value = h.hanTT || '';
   document.getElementById('xhd-congno-chu').value = '';
   renderXHDChatThai();
-  openModal('modal-xuat-hd');
+  navTo(document.querySelector('[data-page=soanHD]'));
 }
 
 function addXHDChatThai() {
@@ -3322,7 +3531,7 @@ async function processDocx(bytes, replacements, tenKH, nam, hkd, dienThoai, emai
   const a = document.createElement('a');
   a.href=url; a.download=filename; a.click();
   URL.revokeObjectURL(url);
-  closeModal('modal-xuat-hd');
+
   toast('✅ Đã tải file hợp đồng Word!');
 }
 
