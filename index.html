@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!-- v=20260425-1 -->
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -379,7 +379,7 @@ const _SESSION_KEY = 'tg_auth_v1';
 const _MAX_ATTEMPTS = 5;
 const _LOCKOUT_MS = 15 * 60 * 1000;
 
-async function _sha256(str) {
+window._sha256 = async function _sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
@@ -407,13 +407,14 @@ window.checkPW = async function() {
     const pw = document.getElementById('pw-input').value;
     if(!pw) { errEl.textContent = 'Vui lòng nhập mật khẩu'; return; }
     errEl.textContent = '⏳ Đang xác thực...';
-    const hash = await _sha256(pw);
-    const correct = await _h('@@');
+    const hash = await window._sha256(pw);
+    const correct = await window._sha256('@@');
     if(hash === correct) {
       localStorage.setItem(_SESSION_KEY, '1');
       _saveAttempts({count:0, time:0});
       document.getElementById('login-screen').style.display = 'none';
-      if(typeof appInit === 'function') appInit();
+      errEl.textContent = '✅ Đăng nhập thành công! Đang tải...';
+      setTimeout(function(){ location.reload(); }, 500);
     } else {
       const a = _getAttempts();
       a.count++; a.time = Date.now();
@@ -435,8 +436,6 @@ if(localStorage.getItem(_SESSION_KEY) === '1') {
   document.addEventListener('DOMContentLoaded', function() {
     const ls = document.getElementById('login-screen');
     if(ls) ls.style.display = 'none';
-    if(typeof appInit === 'function') appInit();
-    else window._autoInit = true;
   });
 } else {
   document.addEventListener('DOMContentLoaded', function() {
