@@ -372,6 +372,79 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 </head>
 <body>
 <!-- LOGIN SCREEN -->
+
+<script>
+// ===== PASSWORD (loaded first) =====
+const _SESSION_KEY = 'tg_auth_v1';
+const _MAX_ATTEMPTS = 5;
+const _LOCKOUT_MS = 15 * 60 * 1000;
+
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function _getAttempts() {
+  try { return JSON.parse(sessionStorage.getItem('_att')||'{"count":0,"time":0}'); }
+  catch { return {count:0,time:0}; }
+}
+function _saveAttempts(a) { sessionStorage.setItem('_att', JSON.stringify(a)); }
+
+window.checkPW = async function() {
+  const errEl = document.getElementById('login-err');
+  const attEl = document.getElementById('login-attempts');
+  try {
+    const attempts = _getAttempts();
+    const now = Date.now();
+    if(attempts.count >= _MAX_ATTEMPTS) {
+      if((now - attempts.time) < _LOCKOUT_MS) {
+        const rem = Math.ceil((_LOCKOUT_MS - (now - attempts.time)) / 60000);
+        errEl.textContent = 'Đã khóa. Thử lại sau ' + rem + ' phút.';
+        return;
+      } else {
+        _saveAttempts({count:0, time:0});
+      }
+    }
+    const pw = document.getElementById('pw-input').value;
+    if(!pw) { errEl.textContent = 'Vui lòng nhập mật khẩu'; return; }
+    errEl.textContent = '⏳ Đang xác thực...';
+    const hash = await _sha256(pw);
+    const correct = await _sha256('@@');
+    if(hash === correct) {
+      localStorage.setItem(_SESSION_KEY, '1');
+      _saveAttempts({count:0, time:0});
+      document.getElementById('login-screen').style.display = 'none';
+      if(typeof appInit === 'function') appInit();
+    } else {
+      const a = _getAttempts();
+      a.count++; a.time = Date.now();
+      _saveAttempts(a);
+      const rem = _MAX_ATTEMPTS - a.count;
+      errEl.textContent = '❌ Mật khẩu không đúng!';
+      attEl.textContent = rem > 0 ? ('Còn ' + rem + ' lần thử') : 'Đã khóa 15 phút';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  } catch(e) {
+    if(errEl) errEl.textContent = '❌ Lỗi: ' + e.message;
+    console.error('checkPW error:', e);
+  }
+};
+
+// Check already logged in
+if(localStorage.getItem(_SESSION_KEY) === '1') {
+  document.addEventListener('DOMContentLoaded', function() {
+    const ls = document.getElementById('login-screen');
+    if(ls) ls.style.display = 'none';
+    if(typeof appInit === 'function') appInit();
+    else window._autoInit = true;
+  });
+} else {
+  document.addEventListener('DOMContentLoaded', function() {
+    const el = document.getElementById('pw-input');
+    if(el) el.focus();
+  });
+}
+</script>
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">♻️</div>
@@ -386,6 +459,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
 </div>
 
 <div class="app">
+
+
 <!-- SIDEBAR -->
 <nav class="sidebar">
   <div class="sb-logo">
@@ -2766,64 +2841,21 @@ function renderAll(){
   }
 }
 
-// ===================== INIT =====================
-// ===================== PASSWORD & INIT =====================
-const _SESSION_KEY = 'tg_auth_v1';
-const _MAX_ATTEMPTS = 5;
-const _LOCKOUT_MS = 15 * 60 * 1000;
-
-async function _sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function _getAttempts() {
-  try { return JSON.parse(sessionStorage.getItem('login_attempts')||'{"count":0,"time":0}'); }
-  catch { return {count:0,time:0}; }
-}
-function _saveAttempts(a) { sessionStorage.setItem('login_attempts', JSON.stringify(a)); }
-
-window.checkPW = async function() {
-  const attempts = _getAttempts();
-  const now = Date.now();
-  if(attempts.count >= _MAX_ATTEMPTS && (now - attempts.time) < _LOCKOUT_MS) {
-    const rem = Math.ceil((_LOCKOUT_MS - (now - attempts.time)) / 60000);
-    document.getElementById('login-err').textContent = `Đã khóa. Thử lại sau ${rem} phút.`;
-    return;
-  }
-  if((now - attempts.time) >= _LOCKOUT_MS) _saveAttempts({count:0,time:0});
-  const pw = document.getElementById('pw-input').value;
-  const hash = await _sha256(pw);
-  const correct = await _sha256('@@');
-  if(hash === correct) {
-    localStorage.setItem(_SESSION_KEY, '1'); // use localStorage so it persists
-    document.getElementById('login-screen').style.display='none';
-    _saveAttempts({count:0,time:0});
-    appInit(); // init app after login
-  } else {
-    const a = _getAttempts();
-    a.count++; a.time = Date.now();
-    _saveAttempts(a);
-    const rem = _MAX_ATTEMPTS - a.count;
-    document.getElementById('login-err').textContent = 'Mật khẩu không đúng!';
-    document.getElementById('login-attempts').textContent = rem > 0 ? `Còn ${rem} lần thử` : 'Tài khoản bị khóa 15 phút';
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-input').focus();
-  }
-};
-
+// appInit - called after successful login
 function appInit() {
   loadData();
   loadNgayChot();
   renderDashboard();
   updateBadges();
+  syncDown();
+  // If auto-init was requested before appInit was defined
+  if(window._autoInit) {
+    window._autoInit = false;
+  }
 }
-
-// Check login state - use localStorage so it persists across tabs/reloads
-if(localStorage.getItem(_SESSION_KEY) === '1') {
-  document.getElementById('login-screen').style.display='none';
+// If already logged in before this script loaded
+if(window._autoInit) {
   appInit();
-} else {
-  setTimeout(()=>{ const el=document.getElementById('pw-input'); if(el) el.focus(); }, 100);
 }
 
 // ===== DRAWER MOBILE NAV =====
@@ -2964,7 +2996,7 @@ async function _syncAllUp() {
 
 // On first load: sync from cloud AFTER everything is initialized
 // appReady is set at the very bottom of the last script block
-window._syncOnReady = true;
+// sync handled in appInit
 
 
 // ===================== TRA CỨU MST =====================
@@ -3018,10 +3050,8 @@ async function traCuuMST(){
   }
 }
 
-// ===================== DEFERRED SYNC (runs after all JS loaded) =====================
-if(window._syncOnReady){
-  syncDown();
-}
+
+// sync is called from appInit() after login only
 
 </script>
 </body>
